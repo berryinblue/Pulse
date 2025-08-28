@@ -5,8 +5,10 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { z } from "zod";
 import { storage } from "./storage";
+import { emailService } from "./email-service";
 import { insertEventSchema, insertReportSchema } from "@shared/schema";
 import ics from "ics";
+import crypto from "crypto";
 
 // Session configuration
 const sessionConfig = {
@@ -92,6 +94,10 @@ passport.use(new GoogleStrategy({
       });
       
       console.log(`✅ New user registered: ${email}`);
+      
+      // Send welcome email (async, non-blocking)
+      emailService.sendWelcomeEmail(email, user.displayName || email.split("@")[0])
+        .catch(error => console.error("Failed to send welcome email:", error));
     } else {
       // Existing user login
       await storage.createAnalyticsEvent({
@@ -264,6 +270,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get events created by user (must be before /:id route)
+  app.get("/api/events/created", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const createdEvents = await storage.getEventsByCreator(user.id);
+      res.json(createdEvents || []);
+    } catch (error) {
+      console.error("Error fetching created events:", error);
+      res.status(500).json({ message: "Failed to fetch created events" });
+    }
+  });
+
+  // Get events user has RSVP'd to (must be before /:id route)
+  app.get("/api/events/rsvped", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const rsvpedEvents = await storage.getEventsByRsvp(user.id);
+      res.json(rsvpedEvents || []);
+    } catch (error) {
+      console.error("Error fetching RSVP'd events:", error);
+      res.status(500).json({ message: "Failed to fetch RSVP'd events" });
+    }
+  });
+
   app.get("/api/events/:id", requireAuth, async (req, res) => {
     try {
       const user = req.user as any;
@@ -305,6 +335,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             propsJson: { eventId },
           });
         }
+        // Send cancellation email
+        const event = await storage.getEvent(eventId);
+        if (event) {
+          emailService.sendRsvpCancellationEmail(
+            user.email,
+            user.displayName || user.email.split("@")[0],
+            event.title
+          ).catch(error => console.error("Failed to send cancellation email:", error));
+        }
+        
         return res.json({ message: "RSVP cancelled" });
       }
 
@@ -336,6 +376,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventName: finalStatus === "yes" ? "rsvp_yes" : "rsvp_waitlist",
         propsJson: { eventId },
       });
+
+      // Send confirmation email
+      const eventDate = event.startAt.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+      const eventLocation = event.isVirtual ? 'Virtual Event' : (event.locationText || 'Location TBD');
+
+      emailService.sendRsvpConfirmationEmail(
+        user.email,
+        user.displayName || user.email.split("@")[0],
+        event.title,
+        eventDate,
+        eventLocation,
+        finalStatus === "yes" ? "confirmed" : "waitlist"
+      ).catch(error => console.error("Failed to send confirmation email:", error));
 
       res.json({ status: finalStatus, message: finalStatus === "yes" ? "RSVP confirmed" : "Added to waitlist" });
     } catch (error) {
@@ -490,23 +550,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/events/created", requireAuth, async (req, res) => {
+  // Email change functionality
+  app.post("/api/me/change-email", requireAuth, async (req, res) => {
     try {
       const user = req.user as any;
-      const createdEvents = await storage.getEventsByCreator(user.id);
-      res.json(createdEvents);
+      const { newEmail } = z.object({ newEmail: z.string().email() }).parse(req.body);
+      
+      // Check if domain is allowed
+      const domain = newEmail.split("@")[1];
+      if (!ALLOWED_DOMAINS.includes(domain)) {
+        return res.status(400).json({ message: "Domain not allowed" });
+      }
+      
+      // Check if email is already in use
+      const existingUser = await storage.getUserByEmail(newEmail);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+      
+      // Generate verification token
+      const token = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      
+      // Store verification request (simplified for now)
+      // In production, you'd store this in the database
+      console.log(`Email change verification token for ${user.email} -> ${newEmail}: ${token}`);
+      
+      res.json({ message: "Email change functionality not fully implemented yet. Check console for token." });
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch created events" });
-    }
-  });
-
-  app.get("/api/events/rsvped", requireAuth, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const rsvpedEvents = await storage.getEventsByRsvp(user.id);
-      res.json(rsvpedEvents);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch RSVP'd events" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+      console.error("Email change error:", error);
+      res.status(500).json({ message: "Failed to initiate email change" });
     }
   });
 

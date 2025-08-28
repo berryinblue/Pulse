@@ -195,7 +195,12 @@ export default function EventDetail() {
                   </div>
 
                   <div className="flex items-center">
-                    <i className="fas fa-user mr-3 w-5 text-muted-foreground"></i>
+                    <Avatar className="w-10 h-10 mr-3">
+                      <AvatarImage src={event.creator.avatarUrl || undefined} />
+                      <AvatarFallback>
+                        {event.creator.displayName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <div className="font-medium">Hosted by</div>
                       <div className="text-sm text-muted-foreground" data-testid="text-event-creator">

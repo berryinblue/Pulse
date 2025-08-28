@@ -121,6 +121,11 @@ export const insertReportSchema = createInsertSchema(reports).omit({
   createdAt: true,
 });
 
+export const insertEmailVerificationSchema = createInsertSchema(emailVerifications).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
   id: true,
   ts: true,
