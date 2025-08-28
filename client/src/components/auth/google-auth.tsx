@@ -1,8 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { redirectToGoogleAuth } from "@/lib/auth";
+import { useEffect, useState } from "react";
 
 export default function GoogleAuth() {
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check for error in URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get('error');
+    
+    if (errorParam === 'auth') {
+      setError('Authentication failed. Please try again.');
+    } else if (errorParam === 'access_denied') {
+      setError('Access denied. Only @google.com email addresses are allowed to access Pulse.');
+    }
+    
+    // Clear error from URL
+    if (errorParam) {
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md mx-4">
@@ -18,6 +40,13 @@ export default function GoogleAuth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4" data-testid="alert-auth-error">
+              <i className="fas fa-exclamation-triangle h-4 w-4"></i>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
           <Button 
             onClick={redirectToGoogleAuth}
             className="w-full"

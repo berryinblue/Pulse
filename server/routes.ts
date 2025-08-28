@@ -23,7 +23,7 @@ const sessionConfig = {
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
-const ALLOWED_DOMAINS = (process.env.ALLOWED_DOMAINS || "google.com,gmail.com").split(",");
+const ALLOWED_DOMAINS = (process.env.ALLOWED_DOMAINS || "google.com").split(",");
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",");
 
 // Get the current URL dynamically
@@ -60,7 +60,7 @@ passport.use(new GoogleStrategy({
 
     const domain = email.split("@")[1];
     if (!ALLOWED_DOMAINS.includes(domain)) {
-      return done(new Error(`Domain ${domain} is not allowed`));
+      return done(new Error(`ACCESS_DENIED:Only @google.com email addresses are allowed to access Pulse. Please use your Google corporate email address.`));
     }
 
     let user = await storage.getUserByEmail(email);
@@ -69,11 +69,12 @@ passport.use(new GoogleStrategy({
       let company = await storage.getCompanyByDomain(domain);
       if (!company) {
         company = await storage.createCompany({
-          name: domain.charAt(0).toUpperCase() + domain.slice(1),
+          name: "Google",
           domain,
         });
       }
 
+      // Create new user account
       user = await storage.createUser({
         email,
         domain,
@@ -82,13 +83,25 @@ passport.use(new GoogleStrategy({
         verifiedAt: new Date(),
       });
 
-      // Track signup
+      // Track new user registration
       await storage.createAnalyticsEvent({
         userId: user.id,
         sessionId: profile.id,
-        eventName: "user_signed_up",
-        propsJson: { domain },
+        eventName: "user_registered",
+        propsJson: { domain, isNewUser: true },
       });
+      
+      console.log(`✅ New user registered: ${email}`);
+    } else {
+      // Existing user login
+      await storage.createAnalyticsEvent({
+        userId: user.id,
+        sessionId: profile.id,
+        eventName: "user_logged_in",
+        propsJson: { domain, isNewUser: false },
+      });
+      
+      console.log(`🔓 Existing user logged in: ${email}`);
     }
 
     return done(null, user);
@@ -144,8 +157,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/google/callback", 
-    passport.authenticate("google", { failureRedirect: "/?error=auth" }),
-    (req, res) => {
+    passport.authenticate("google", { 
+      failureRedirect: "/?error=auth",
+      session: true 
+    }),
+    (req, res, next) => {
+      // Check if there was an authentication error
+      if (req.query.error) {
+        return res.redirect("/?error=access_denied");
+      }
+      
+      // Success - redirect to main app
       res.redirect("/");
     }
   );
