@@ -23,7 +23,7 @@ const sessionConfig = {
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
-const ALLOWED_DOMAINS = (process.env.ALLOWED_DOMAINS || "google.com,meta.com,amazon.com").split(",");
+const ALLOWED_DOMAINS = (process.env.ALLOWED_DOMAINS || "google.com,meta.com,amazon.com,gmail.com").split(",");
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",");
 
 // Get the current URL dynamically
@@ -257,8 +257,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(event);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error("Validation errors:", JSON.stringify(error.errors, null, 2));
-        console.error("Request body:", JSON.stringify(req.body, null, 2));
         return res.status(400).json({ message: "Invalid event data", errors: error.errors });
       }
       console.error("Event creation error:", error);
