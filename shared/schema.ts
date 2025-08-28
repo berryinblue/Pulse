@@ -29,6 +29,7 @@ export const events = pgTable("events", {
   description: text("description"),
   tagsJson: jsonb("tags_json").$type<string[]>(),
   locationText: text("location_text"),
+  campus: text("campus"),
   isVirtual: boolean("is_virtual").default(false),
   startAt: timestamp("start_at").notNull(),
   endAt: timestamp("end_at").notNull(),
@@ -96,7 +97,14 @@ export const insertEventSchema = createInsertSchema(events).omit({
 }).extend({
   tags: z.array(z.string()).optional(),
   allowedDomains: z.array(z.string()).optional(),
-});
+  campus: z.string().optional(),
+}).transform((data) => ({
+  ...data,
+  tagsJson: data.tags,
+  allowedDomainsJson: data.allowedDomains,
+  tags: undefined,
+  allowedDomains: undefined,
+}));
 
 export const insertEventRsvpSchema = createInsertSchema(eventRsvps).omit({
   id: true,

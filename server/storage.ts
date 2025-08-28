@@ -17,7 +17,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: string, data: { displayName: string }): Promise<User>;
+  updateUser(id: string, data: { displayName?: string; avatarUrl?: string }): Promise<User>;
   
   // Companies
   getCompanyByDomain(domain: string): Promise<Company | undefined>;
@@ -82,8 +82,12 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async updateUser(id: string, data: { displayName: string }): Promise<User> {
-    const result = await db.update(users).set(data).where(eq(users.id, id)).returning();
+  async updateUser(id: string, data: { displayName?: string; avatarUrl?: string }): Promise<User> {
+    const updateData: Partial<typeof users.$inferInsert> = {};
+    if (data.displayName !== undefined) updateData.displayName = data.displayName;
+    if (data.avatarUrl !== undefined) updateData.avatarUrl = data.avatarUrl;
+    
+    const result = await db.update(users).set(updateData).where(eq(users.id, id)).returning();
     return result[0];
   }
 
@@ -139,6 +143,7 @@ export class DatabaseStorage implements IStorage {
         description: events.description,
         tagsJson: events.tagsJson,
         locationText: events.locationText,
+        campus: events.campus,
         isVirtual: events.isVirtual,
         startAt: events.startAt,
         endAt: events.endAt,
@@ -197,6 +202,7 @@ export class DatabaseStorage implements IStorage {
         description: events.description,
         tagsJson: events.tagsJson,
         locationText: events.locationText,
+        campus: events.campus,
         isVirtual: events.isVirtual,
         startAt: events.startAt,
         endAt: events.endAt,
@@ -278,6 +284,7 @@ export class DatabaseStorage implements IStorage {
         description: events.description,
         tagsJson: events.tagsJson,
         locationText: events.locationText,
+        campus: events.campus,
         isVirtual: events.isVirtual,
         startAt: events.startAt,
         endAt: events.endAt,
@@ -321,6 +328,7 @@ export class DatabaseStorage implements IStorage {
         description: events.description,
         tagsJson: events.tagsJson,
         locationText: events.locationText,
+        campus: events.campus,
         isVirtual: events.isVirtual,
         startAt: events.startAt,
         endAt: events.endAt,

@@ -423,17 +423,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload routes
+  app.post("/api/upload/avatar", requireAuth, async (req, res) => {
+    try {
+      // For this demo, we'll accept base64 images
+      // In production, you'd upload to cloud storage (S3, CloudFront, etc.)
+      const { imageData } = req.body;
+      
+      if (!imageData || typeof imageData !== 'string') {
+        return res.status(400).json({ message: "Image data is required" });
+      }
+      
+      // Validate it's a valid base64 image
+      if (!imageData.startsWith('data:image/')) {
+        return res.status(400).json({ message: "Invalid image format" });
+      }
+      
+      // For demo purposes, we'll just return the base64 URL
+      // In production, you'd upload to cloud storage and return the URL
+      res.json({ url: imageData });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to upload avatar" });
+    }
+  });
+
   // Profile routes
   app.patch("/api/me", requireAuth, async (req, res) => {
     try {
       const user = req.user as any;
-      const { displayName } = req.body;
+      const { displayName, avatarUrl } = req.body;
       
-      if (!displayName || typeof displayName !== 'string') {
-        return res.status(400).json({ message: "Display name is required" });
+      const updateData: { displayName?: string; avatarUrl?: string } = {};
+      
+      if (displayName && typeof displayName === 'string') {
+        updateData.displayName = displayName;
+      }
+      
+      if (avatarUrl && typeof avatarUrl === 'string') {
+        updateData.avatarUrl = avatarUrl;
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid update data provided" });
       }
 
-      const updatedUser = await storage.updateUser(user.id, { displayName });
+      const updatedUser = await storage.updateUser(user.id, updateData);
       res.json(updatedUser);
     } catch (error) {
       res.status(500).json({ message: "Failed to update profile" });

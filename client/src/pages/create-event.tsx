@@ -25,7 +25,8 @@ const createEventSchema = z.object({
   startAt: z.string().min(1, "Start date is required"),
   endAt: z.string().min(1, "End date is required"),
   locationText: z.string().optional(),
-  capacity: z.number().min(1, "Capacity must be at least 1").optional(),
+  campus: z.string().optional(),
+  capacity: z.number().min(1, "Capacity must be greater than 0").optional(),
   isVirtual: z.boolean(),
   tags: z.array(z.string()),
   visibilityEnum: z.enum(["company_only", "cross_company"]),
@@ -54,6 +55,7 @@ export default function CreateEvent() {
       startAt: "",
       endAt: "",
       locationText: "",
+      campus: "",
       capacity: undefined,
       isVirtual: false,
       tags: [],
@@ -169,6 +171,9 @@ export default function CreateEvent() {
                             data-testid="input-start-time"
                           />
                         </FormControl>
+                        <div className="text-xs text-muted-foreground">
+                          Local time ({Intl.DateTimeFormat().resolvedOptions().timeZone})
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -187,29 +192,62 @@ export default function CreateEvent() {
                             data-testid="input-end-time"
                           />
                         </FormControl>
+                        <div className="text-xs text-muted-foreground">
+                          Local time ({Intl.DateTimeFormat().resolvedOptions().timeZone})
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="locationText"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., Cafe 150, MTV or Google Meet Link"
-                          {...field}
-                          data-testid="input-location"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="locationText"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Cafe 150 or Google Meet Link"
+                            {...field}
+                            data-testid="input-location"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="campus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Campus</FormLabel>
+                        <FormControl>
+                          <Select value={field.value || ""} onValueChange={field.onChange}>
+                            <SelectTrigger data-testid="select-campus">
+                              <SelectValue placeholder="Select campus" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Mountain View">Mountain View</SelectItem>
+                              <SelectItem value="San Francisco">San Francisco</SelectItem>
+                              <SelectItem value="New York">New York</SelectItem>
+                              <SelectItem value="Austin">Austin</SelectItem>
+                              <SelectItem value="Seattle">Seattle</SelectItem>
+                              <SelectItem value="London">London</SelectItem>
+                              <SelectItem value="Dublin">Dublin</SelectItem>
+                              <SelectItem value="Zurich">Zurich</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -222,8 +260,12 @@ export default function CreateEvent() {
                           <Input
                             type="number"
                             placeholder="e.g., 20"
+                            min="1"
                             {...field}
-                            onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            onChange={e => {
+                              const value = e.target.value;
+                              field.onChange(value ? Math.max(1, Number(value)) : undefined);
+                            }}
                             data-testid="input-capacity"
                           />
                         </FormControl>

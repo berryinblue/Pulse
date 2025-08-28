@@ -17,6 +17,8 @@ export default function Profile() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ["/api/me"],
@@ -27,7 +29,7 @@ export default function Profile() {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: { displayName: string }) => {
+    mutationFn: async (data: { displayName?: string; avatarUrl?: string }) => {
       const response = await apiRequest("PATCH", "/api/me", data);
       return response.json();
     },
@@ -52,14 +54,90 @@ export default function Profile() {
     if (isEditing) {
       setIsEditing(false);
       setDisplayName(user?.displayName || "");
+      setSelectedFile(null);
+      setPreviewUrl(null);
     } else {
       setIsEditing(true);
-      setDisplayName(user?.displayName || "");
+      // Default to first name only for new users
+      const currentName = user?.displayName || "";
+      if (!currentName || currentName === user?.email?.split('@')[0]) {
+        // If display name is empty or just email username, set to first name from email
+        const emailName = user?.email?.split('@')[0] || "";
+        const firstName = emailName.split('.')[0] || emailName;
+        setDisplayName(firstName.charAt(0).toUpperCase() + firstName.slice(1));
+      } else {
+        setDisplayName(currentName);
+      }
+    }
+  };
+  
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type and size
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File",
+          description: "Please select an image file.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "File Too Large",
+          description: "Please select an image smaller than 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setSelectedFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleSave = () => {
-    updateProfileMutation.mutate({ displayName });
+  const handleSave = async () => {
+    try {
+      let avatarUrl = user?.avatarUrl;
+      
+      // If a new file is selected, upload it
+      if (selectedFile && previewUrl) {
+        const uploadResponse = await apiRequest("POST", "/api/upload/avatar", {
+          imageData: previewUrl
+        });
+        const uploadResult = await uploadResponse.json();
+        avatarUrl = uploadResult.url;
+      }
+      
+      // Update profile with new data
+      const updateData: { displayName?: string; avatarUrl?: string } = {};
+      if (displayName !== user?.displayName) {
+        updateData.displayName = displayName;
+      }
+      if (avatarUrl && avatarUrl !== user?.avatarUrl) {
+        updateData.avatarUrl = avatarUrl;
+      }
+      
+      if (Object.keys(updateData).length > 0) {
+        updateProfileMutation.mutate(updateData);
+      } else {
+        setIsEditing(false);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -98,12 +176,33 @@ export default function Profile() {
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-4">
-                <Avatar className="w-20 h-20">
-                  <AvatarImage src={user?.avatarUrl || undefined} alt={user?.displayName} />
-                  <AvatarFallback className="text-lg">
-                    {user?.displayName ? getInitials(user.displayName) : "U"}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage 
+                      src={previewUrl || user?.avatarUrl || undefined} 
+                      alt={user?.displayName} 
+                    />
+                    <AvatarFallback className="text-lg">
+                      {user?.displayName ? getInitials(user.displayName) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isEditing && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                      <Label htmlFor="avatar-upload" className="cursor-pointer text-white text-xs text-center">
+                        <i className="fas fa-camera block mb-1"></i>
+                        Change
+                      </Label>
+                      <Input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        data-testid="input-avatar"
+                      />
+                    </div>
+                  )}
+                </div>
                 <div>
                   {isEditing ? (
                     <div className="space-y-2">
