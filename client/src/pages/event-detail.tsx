@@ -1,0 +1,290 @@
+import { useParams } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Header from "@/components/header";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
+
+export default function EventDetail() {
+  const { id } = useParams();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: event, isLoading } = useQuery({
+    queryKey: ["/api/events", id],
+    queryFn: async () => {
+      const response = await fetch(`/api/events/${id}`, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch event");
+      return response.json();
+    },
+    enabled: !!id,
+  });
+
+  const rsvpMutation = useMutation({
+    mutationFn: async (status: "yes" | "no") => {
+      const response = await apiRequest("POST", `/api/events/${id}/rsvp`, { status });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({
+        title: "RSVP Updated",
+        description: data.message,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update RSVP. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const downloadICS = async () => {
+    try {
+      const response = await fetch(`/api/events/${id}/ics`, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to download calendar file");
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${event.title}.ics`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Calendar Downloaded",
+        description: "Event has been added to your calendar file.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download calendar file.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Skeleton className="h-8 w-64 mb-4" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-12">
+            <i className="fas fa-calendar-times text-4xl text-muted-foreground mb-4"></i>
+            <h1 className="text-2xl font-bold mb-2">Event not found</h1>
+            <p className="text-muted-foreground">This event may have been removed or is not accessible.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const startDate = new Date(event.startAt);
+  const endDate = new Date(event.endAt);
+  const tags = event.tagsJson || [];
+  const attendees = event.attendees || [];
+
+  const handleRsvp = () => {
+    if (event.userRsvpStatus === "yes" || event.userRsvpStatus === "waitlist") {
+      rsvpMutation.mutate("no");
+    } else {
+      rsvpMutation.mutate("yes");
+    }
+  };
+
+  const getRsvpButtonText = () => {
+    if (rsvpMutation.isPending) return "Updating...";
+    
+    switch (event.userRsvpStatus) {
+      case "yes":
+        return "Cancel RSVP";
+      case "waitlist":
+        return "Leave Waitlist";
+      default:
+        return "RSVP";
+    }
+  };
+
+  const getRsvpButtonVariant = () => {
+    return event.userRsvpStatus === "yes" || event.userRsvpStatus === "waitlist" 
+      ? "outline" 
+      : "default";
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-4">
+                  {tags.map((tag) => (
+                    <Badge key={tag} variant="secondary">{tag}</Badge>
+                  ))}
+                  {event.userRsvpStatus && (
+                    <Badge variant={event.userRsvpStatus === "yes" ? "default" : "secondary"}>
+                      {event.userRsvpStatus === "yes" ? "Going" : "Waitlisted"}
+                    </Badge>
+                  )}
+                </div>
+                <CardTitle className="text-3xl mb-4" data-testid="text-event-title">
+                  {event.title}
+                </CardTitle>
+              </div>
+              <Button variant="ghost" size="icon" data-testid="button-bookmark">
+                <i className="far fa-bookmark text-muted-foreground"></i>
+              </Button>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {event.description && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">About this event</h3>
+                <p className="text-muted-foreground" data-testid="text-event-description">
+                  {event.description}
+                </p>
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Event Details</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <i className="fas fa-calendar-alt mr-3 w-5 text-muted-foreground"></i>
+                    <div>
+                      <div className="font-medium" data-testid="text-event-date">
+                        {format(startDate, 'EEEE, MMMM d, yyyy')}
+                      </div>
+                      <div className="text-sm text-muted-foreground" data-testid="text-event-time">
+                        {format(startDate, 'h:mm a')} - {format(endDate, 'h:mm a')}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <i className={`${event.isVirtual ? 'fas fa-video' : 'fas fa-map-marker-alt'} mr-3 w-5 text-muted-foreground`}></i>
+                    <div data-testid="text-event-location">
+                      {event.locationText || (event.isVirtual ? 'Virtual Event' : 'Location TBD')}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <i className="fas fa-user mr-3 w-5 text-muted-foreground"></i>
+                    <div>
+                      <div className="font-medium">Hosted by</div>
+                      <div className="text-sm text-muted-foreground" data-testid="text-event-creator">
+                        {event.creator.displayName}
+                      </div>
+                    </div>
+                  </div>
+
+                  {event.capacity && (
+                    <div className="flex items-center">
+                      <i className="fas fa-users mr-3 w-5 text-muted-foreground"></i>
+                      <div>
+                        <div className="font-medium">Capacity</div>
+                        <div className="text-sm text-muted-foreground" data-testid="text-event-capacity">
+                          {attendees.length} / {event.capacity} people
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {attendees.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">
+                    Who's going ({attendees.length})
+                  </h3>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {attendees.slice(0, 10).map((attendee) => (
+                      <div key={attendee.id} className="flex items-center space-x-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={attendee.avatarUrl || undefined} />
+                          <AvatarFallback>
+                            {attendee.displayName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium" data-testid={`text-attendee-name-${attendee.id}`}>
+                            {attendee.displayName}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            @{attendee.domain}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {attendees.length > 10 && (
+                      <div className="text-sm text-muted-foreground">
+                        +{attendees.length - 10} more attendees
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-6 border-t border-border">
+              <div className="flex items-center space-x-4">
+                <Button 
+                  variant="outline" 
+                  onClick={downloadICS}
+                  data-testid="button-download-ics"
+                >
+                  <i className="fas fa-download mr-2"></i>
+                  Add to Calendar
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  data-testid="button-report"
+                >
+                  <i className="fas fa-flag mr-2"></i>
+                  Report Event
+                </Button>
+              </div>
+              <Button
+                onClick={handleRsvp}
+                disabled={rsvpMutation.isPending}
+                variant={getRsvpButtonVariant() as any}
+                size="lg"
+                data-testid="button-rsvp-main"
+              >
+                <i className="fas fa-check mr-2"></i>
+                {getRsvpButtonText()}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
