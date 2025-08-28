@@ -142,7 +142,7 @@ export default function EventDetail() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-4">
-                  {tags.map((tag) => (
+                  {tags.map((tag: string) => (
                     <Badge key={tag} variant="secondary">{tag}</Badge>
                   ))}
                   {event.userRsvpStatus && (
@@ -224,7 +224,7 @@ export default function EventDetail() {
                     Who's going ({attendees.length})
                   </h3>
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {attendees.slice(0, 10).map((attendee) => (
+                    {attendees.slice(0, 10).map((attendee: any) => (
                       <div key={attendee.id} className="flex items-center space-x-3">
                         <Avatar className="w-8 h-8">
                           <AvatarImage src={attendee.avatarUrl || undefined} />

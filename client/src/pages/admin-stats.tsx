@@ -161,7 +161,7 @@ export default function AdminStats() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {stats.topTags.map((tag) => (
+                {stats.topTags.map((tag: any) => (
                   <Badge key={tag.tag} variant="secondary" className="text-sm">
                     {tag.tag} ({tag.count})
                   </Badge>

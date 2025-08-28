@@ -1,4 +1,4 @@
-import { drizzle } from "drizzle-orm/neon-serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, and, desc, gte, lte, ilike, sql, count, inArray } from "drizzle-orm";
 import { 
@@ -8,7 +8,9 @@ import {
   type Report, type InsertReport, type AnalyticsEvent, type InsertAnalyticsEvent
 } from "@shared/schema";
 
-const db = drizzle(neon(process.env.DATABASE_URL!));
+const db = drizzle(neon(process.env.DATABASE_URL!), { 
+  logger: false 
+});
 
 export interface IStorage {
   // Users
@@ -95,7 +97,31 @@ export class DatabaseStorage implements IStorage {
     campus?: string;
     userDomain: string;
   }) {
-    let query = db
+    const conditions = [eq(events.statusEnum, "active")];
+
+    if (filters.query) {
+      conditions.push(
+        sql`${events.title} ILIKE ${`%${filters.query}%`} OR ${events.description} ILIKE ${`%${filters.query}%`}`
+      );
+    }
+
+    if (filters.from) {
+      conditions.push(gte(events.startAt, filters.from));
+    }
+
+    if (filters.to) {
+      conditions.push(lte(events.startAt, filters.to));
+    }
+
+    if (filters.virtual !== undefined) {
+      conditions.push(eq(events.isVirtual, filters.virtual));
+    }
+
+    if (filters.campus) {
+      conditions.push(ilike(events.locationText, `%${filters.campus}%`));
+    }
+
+    const result = await db
       .select({
         id: events.id,
         companyId: events.companyId,
@@ -141,31 +167,9 @@ export class DatabaseStorage implements IStorage {
       })
       .from(events)
       .innerJoin(users, eq(events.creatorUserId, users.id))
-      .where(eq(events.statusEnum, "active"));
+      .where(and(...conditions))
+      .orderBy(desc(events.startAt));
 
-    if (filters.query) {
-      query = query.where(
-        sql`${events.title} ILIKE ${`%${filters.query}%`} OR ${events.description} ILIKE ${`%${filters.query}%`}`
-      );
-    }
-
-    if (filters.from) {
-      query = query.where(gte(events.startAt, filters.from));
-    }
-
-    if (filters.to) {
-      query = query.where(lte(events.startAt, filters.to));
-    }
-
-    if (filters.virtual !== undefined) {
-      query = query.where(eq(events.isVirtual, filters.virtual));
-    }
-
-    if (filters.campus) {
-      query = query.where(ilike(events.locationText, `%${filters.campus}%`));
-    }
-
-    const result = await query.orderBy(desc(events.startAt));
     return result as any[];
   }
 
