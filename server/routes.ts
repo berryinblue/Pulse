@@ -229,9 +229,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/events", requireAuth, async (req, res) => {
     try {
       const user = req.user as any;
+      
+      // Get the user's company based on their domain
+      const company = await storage.getCompanyByDomain(user.domain);
+      
       const eventData = insertEventSchema.parse({
         ...req.body,
         creatorUserId: user.id,
+        companyId: company?.id || null,
       });
 
       const event = await storage.createEvent(eventData);
@@ -254,6 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid event data", errors: error.errors });
       }
+      console.error("Event creation error:", error);
       res.status(500).json({ message: "Failed to create event" });
     }
   });

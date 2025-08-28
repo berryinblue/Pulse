@@ -113,6 +113,12 @@ export default function Profile() {
         const uploadResponse = await apiRequest("POST", "/api/upload/avatar", {
           imageData: previewUrl
         });
+        
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          throw new Error(errorData.message || "Failed to upload image");
+        }
+        
         const uploadResult = await uploadResponse.json();
         avatarUrl = uploadResult.url;
       }
@@ -132,9 +138,10 @@ export default function Profile() {
         setIsEditing(false);
       }
     } catch (error) {
+      console.error("Profile update error:", error);
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update profile picture. Please try again.",
         variant: "destructive",
       });
     }
