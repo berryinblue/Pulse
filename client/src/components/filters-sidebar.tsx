@@ -41,7 +41,7 @@ export default function FiltersSidebar({ onFiltersChange, isLoading }: FiltersPr
     const apiFilters: any = {};
     if (updated.query) apiFilters.query = updated.query;
     if (updated.tags.length > 0) apiFilters.tags = updated.tags.join(",");
-    if (updated.campus) apiFilters.campus = updated.campus;
+    if (updated.campus && updated.campus !== "all") apiFilters.campus = updated.campus;
     
     // Convert when to date range
     const now = new Date();
@@ -160,7 +160,7 @@ export default function FiltersSidebar({ onFiltersChange, isLoading }: FiltersPr
                 <SelectValue placeholder="All Campuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Campuses</SelectItem>
+                <SelectItem value="all">All Campuses</SelectItem>
                 {campuses.map((campus) => (
                   <SelectItem key={campus.value} value={campus.value}>
                     {campus.label}

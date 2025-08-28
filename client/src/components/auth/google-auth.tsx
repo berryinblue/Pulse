@@ -12,10 +12,10 @@ export default function GoogleAuth() {
     const urlParams = new URLSearchParams(window.location.search);
     const errorParam = urlParams.get('error');
     
-    if (errorParam === 'auth') {
+    if (errorParam === 'auth' || errorParam === 'auth_failed') {
       setError('Authentication failed. Please try again.');
-    } else if (errorParam === 'access_denied') {
-      setError('Access denied. Only @google.com email addresses are allowed to access Pulse.');
+    } else if (errorParam === 'access_denied' || errorParam === 'domain_restricted') {
+      setError('Access denied. Only @google.com email addresses are allowed to access Pulse. Please use your Google corporate email address.');
     }
     
     // Clear error from URL

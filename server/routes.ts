@@ -157,18 +157,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/google/callback", 
-    passport.authenticate("google", { 
-      failureRedirect: "/?error=auth",
-      session: true 
-    }),
     (req, res, next) => {
-      // Check if there was an authentication error
-      if (req.query.error) {
-        return res.redirect("/?error=access_denied");
-      }
-      
-      // Success - redirect to main app
-      res.redirect("/");
+      passport.authenticate("google", { 
+        session: true 
+      })(req, res, (err: any) => {
+        if (err) {
+          console.log('🚫 Authentication error:', err.message);
+          
+          // Check if it's a domain restriction error
+          if (err.message && err.message.startsWith('ACCESS_DENIED:')) {
+            return res.redirect("/?error=domain_restricted");
+          }
+          
+          // Other authentication errors
+          return res.redirect("/?error=auth_failed");
+        }
+        
+        // Success - redirect to main app
+        res.redirect("/");
+      });
     }
   );
 
