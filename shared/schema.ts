@@ -94,6 +94,8 @@ export const insertEventSchema = createInsertSchema(events).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  startAt: true,
+  endAt: true,
 }).extend({
   tags: z.array(z.string()).optional(),
   allowedDomains: z.array(z.string()).optional(),
