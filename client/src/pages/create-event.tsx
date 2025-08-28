@@ -64,7 +64,13 @@ export default function CreateEvent() {
 
   const createEventMutation = useMutation({
     mutationFn: async (data: CreateEventForm) => {
-      const response = await apiRequest("POST", "/api/events", data);
+      // Convert string dates to Date objects for the backend
+      const eventData = {
+        ...data,
+        startAt: new Date(data.startAt),
+        endAt: new Date(data.endAt),
+      };
+      const response = await apiRequest("POST", "/api/events", eventData);
       return response.json();
     },
     onSuccess: (event) => {

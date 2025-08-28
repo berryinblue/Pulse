@@ -423,6 +423,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Profile routes
+  app.patch("/api/me", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { displayName } = req.body;
+      
+      if (!displayName || typeof displayName !== 'string') {
+        return res.status(400).json({ message: "Display name is required" });
+      }
+
+      const updatedUser = await storage.updateUser(user.id, { displayName });
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  app.get("/api/users/events", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userEvents = await storage.getUserEvents(user.id);
+      res.json(userEvents);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user events" });
+    }
+  });
+
+  app.get("/api/events/created", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const createdEvents = await storage.getEventsByCreator(user.id);
+      res.json(createdEvents);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch created events" });
+    }
+  });
+
+  app.get("/api/events/rsvped", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const rsvpedEvents = await storage.getEventsByRsvp(user.id);
+      res.json(rsvpedEvents);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch RSVP'd events" });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/stats", requireAuth, requireAdmin, async (req, res) => {
     try {

@@ -17,6 +17,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, data: { displayName: string }): Promise<User>;
   
   // Companies
   getCompanyByDomain(domain: string): Promise<Company | undefined>;
@@ -39,6 +40,9 @@ export interface IStorage {
     userRsvpStatus: string | null;
   }) | undefined>;
   createEvent(event: InsertEvent): Promise<Event>;
+  getUserEvents(userId: string): Promise<any[]>;
+  getEventsByCreator(userId: string): Promise<(Event & { creator: User; rsvpCount: number })[]>;
+  getEventsByRsvp(userId: string): Promise<(Event & { creator: User; userRsvpStatus: string })[]>;
   
   // RSVPs
   createRsvp(rsvp: InsertEventRsvp): Promise<EventRsvp>;
@@ -75,6 +79,11 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const result = await db.insert(users).values(user).returning();
+    return result[0];
+  }
+
+  async updateUser(id: string, data: { displayName: string }): Promise<User> {
+    const result = await db.update(users).set(data).where(eq(users.id, id)).returning();
     return result[0];
   }
 
@@ -252,6 +261,94 @@ export class DatabaseStorage implements IStorage {
       allowedDomainsJson: allowedDomains || [],
     }).returning();
     return result[0];
+  }
+
+  async getUserEvents(userId: string): Promise<any[]> {
+    // This is a placeholder - we'll use the more specific methods below
+    return [];
+  }
+
+  async getEventsByCreator(userId: string): Promise<(Event & { creator: User; rsvpCount: number })[]> {
+    const result = await db
+      .select({
+        id: events.id,
+        companyId: events.companyId,
+        creatorUserId: events.creatorUserId,
+        title: events.title,
+        description: events.description,
+        tagsJson: events.tagsJson,
+        locationText: events.locationText,
+        isVirtual: events.isVirtual,
+        startAt: events.startAt,
+        endAt: events.endAt,
+        capacity: events.capacity,
+        visibilityEnum: events.visibilityEnum,
+        allowedDomainsJson: events.allowedDomainsJson,
+        createdAt: events.createdAt,
+        updatedAt: events.updatedAt,
+        statusEnum: events.statusEnum,
+        creator: {
+          id: users.id,
+          email: users.email,
+          domain: users.domain,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
+          verifiedAt: users.verifiedAt,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        },
+        rsvpCount: sql<number>`COALESCE((
+          SELECT COUNT(*) FROM ${eventRsvps} 
+          WHERE ${eventRsvps.eventId} = ${events.id} 
+          AND ${eventRsvps.statusEnum} = 'yes'
+        ), 0)`,
+      })
+      .from(events)
+      .innerJoin(users, eq(events.creatorUserId, users.id))
+      .where(eq(events.creatorUserId, userId))
+      .orderBy(desc(events.startAt));
+
+    return result as any[];
+  }
+
+  async getEventsByRsvp(userId: string): Promise<(Event & { creator: User; userRsvpStatus: string })[]> {
+    const result = await db
+      .select({
+        id: events.id,
+        companyId: events.companyId,
+        creatorUserId: events.creatorUserId,
+        title: events.title,
+        description: events.description,
+        tagsJson: events.tagsJson,
+        locationText: events.locationText,
+        isVirtual: events.isVirtual,
+        startAt: events.startAt,
+        endAt: events.endAt,
+        capacity: events.capacity,
+        visibilityEnum: events.visibilityEnum,
+        allowedDomainsJson: events.allowedDomainsJson,
+        createdAt: events.createdAt,
+        updatedAt: events.updatedAt,
+        statusEnum: events.statusEnum,
+        creator: {
+          id: users.id,
+          email: users.email,
+          domain: users.domain,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
+          verifiedAt: users.verifiedAt,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        },
+        userRsvpStatus: eventRsvps.statusEnum,
+      })
+      .from(events)
+      .innerJoin(users, eq(events.creatorUserId, users.id))
+      .innerJoin(eventRsvps, eq(events.id, eventRsvps.eventId))
+      .where(and(eq(eventRsvps.userId, userId), eq(eventRsvps.statusEnum, "yes")))
+      .orderBy(desc(events.startAt));
+
+    return result as any[];
   }
 
   async createRsvp(rsvp: InsertEventRsvp): Promise<EventRsvp> {
