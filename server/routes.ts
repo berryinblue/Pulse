@@ -60,7 +60,7 @@ passport.use(new GoogleStrategy({
 
     const domain = email.split("@")[1];
     if (!ALLOWED_DOMAINS.includes(domain)) {
-      return done(new Error(`ACCESS_DENIED:Only @google.com email addresses are allowed to access Pulse. Please use your Google corporate email address.`));
+      return done(new Error(`ACCESS_DENIED:Only @google.com, @meta.com, @amazon.com, and @gmail.com email addresses are allowed to access Pulse. Please use your Google corporate email address.`));
     }
 
     let user = await storage.getUserByEmail(email);
