@@ -1,0 +1,65 @@
+403. That’s an error.
+
+We're sorry, but you do not have access to this page. That’s all we know.
+
+Additional details (only visible to internal users!):
+
+com.google.apps.framework.request.ForbiddenException: Request blocked by go/framing-isolation-policy.
+Current request: Sec-Fetch-Site: cross-site, Sec-Fetch-Mode: navigate, Sec-Fetch-Dest: iframe.
+AllowFraming: not present
+Affected Action: OAuthErrorPage
+	at com.google.security.secmetadata.RequestPolicyEnforcingProcessor.startPreProcess(RequestPolicyEnforcingProcessor.java:97)
+	at com.google.apps.framework.request.impl.TracedProcessor.startPreProcess(TracedProcessor.kt:42)
+	at com.google.apps.framework.request.impl.FuturesTrackingProcessorExecution.runStartPreProcess(FuturesTrackingProcessorExecution.java:695)
+	at com.google.apps.framework.request.impl.FuturesTrackingProcessorExecution.startReadyPreProcessors(FuturesTrackingProcessorExecution.java:474)
+	at com.google.apps.framework.request.impl.FuturesTrackingProcessorExecution.preProcess(FuturesTrackingProcessorExecution.java:257)
+	at com.google.apps.framework.request.impl.AbstractDispatcher.doPreProcess(AbstractDispatcher.java:485)
+	at com.google.apps.framework.request.impl.AbstractDispatcher.execute(AbstractDispatcher.java:345)
+	at com.google.apps.framework.request.impl.AbstractDispatcher.reattach(AbstractDispatcher.java:1219)
+	at com.google.apps.framework.request.impl.AbstractDispatcher.lambda$getScopedReceiver$0(AbstractDispatcher.java:1156)
+	at com.google.apps.framework.gse.GseDetacher$1.reattach(GseDetacher.java:57)
+	at com.google.gse.internal.HttpConnectionImpl.reattachThread(HttpConnectionImpl.java:657)
+	at com.google.apps.framework.gse.GseDetacher.reattachThread(GseDetacher.java:53)
+	at com.google.apps.framework.gse.GseDetacher.lambda$reattachOnTrigger$0(GseDetacher.java:43)
+	at com.google.common.context.ContextRunnable.runInContext(ContextRunnable.java:83)
+	at io.grpc.Context.run(Context.java:536)
+	at com.google.common.context.ContextCallback.runInInheritedContext(ContextCallback.java:56)
+	at com.google.common.context.ContextRunnable.run(ContextRunnable.java:74)
+	at com.google.gse.internal.DispatchQueueImpl$WorkerThread.run(DispatchQueueImpl.java:413)
+
+auth.http.actual_method: gaia_cookie
+auth.http.creds_encrypted: true
+auth.http.initial_method: custom
+auth.http.num_sessions: 3
+auth.http.session_index: 0
+auth.http_scopes.granted: 9505
+auth.http_scopes.requested: 9505
+auth.roles.acting_account: 
+auth.roles.effective_entity: 1!0000000412304c06
+auth.security_context.is_anonymous: false
+auth.security_context.originator: gaiauser/0x412304c06
+auth.security_context.user: gaiauser/0x412304c06
+auth.status: OK
+debug.role: CODE: INTERNAL
+parameters.authError: REDACTED
+parameters.client_id: 1063718083911-kmcc74slhdtudguhnsq1tt231gek64uv.apps.googleusercontent.com
+parameters.flowName: GeneralOAuthFlow
+request.action_group: 
+request.host: accounts.google.com
+request.language: en
+request.method: GET
+request.referer: https://ec451a68-da83-4c67-a48b-95b9accb6ba6-00-1zabtxyodcntj.spock.replit.dev/
+request.secure: true
+request.user_agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36,gzip(gfe)
+request.user_agent.client_hints.full_user_agent: "Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"
+request.user_agent.client_hints.mobile: ?0
+request.user_agent.client_hints.platform: macOS
+response.canonical_code: PERMISSION_DENIED
+response.origin: RequestPolicyEnforcingProcessor
+response.rounded_status: 400
+response.rpc_status: generic::PERMISSION_DENIED
+response.status: 403
+rpc_client.borg_cell: bk
+rpc_client.jobname: prod.blue-layer1-gfe
+rpc_client.primary_role: blue-layer1-gfe-prod-core
+rpc_client.username: untrusted-http-proxy

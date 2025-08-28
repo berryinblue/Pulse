@@ -16,7 +16,21 @@ export function useAuth() {
 }
 
 export function redirectToGoogleAuth() {
-  window.location.href = "/api/auth/google";
+  // Open Google OAuth in a popup to avoid iframe restrictions
+  const popup = window.open(
+    "/api/auth/google",
+    "google-oauth",
+    "width=500,height=600,scrollbars=yes,resizable=yes"
+  );
+  
+  // Listen for popup to close (successful auth)
+  const checkClosed = setInterval(() => {
+    if (popup?.closed) {
+      clearInterval(checkClosed);
+      // Refresh the page to get the updated auth state
+      window.location.reload();
+    }
+  }, 1000);
 }
 
 export async function logout() {

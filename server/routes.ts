@@ -111,9 +111,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(passport.session());
 
   // Auth routes
-  app.get("/api/auth/google", passport.authenticate("google", {
-    scope: ["profile", "email"]
-  }));
+  app.get("/api/auth/google", (req, res, next) => {
+    // Add headers to prevent iframe blocking
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
+    
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+      prompt: "select_account"
+    })(req, res, next);
+  });
 
   app.get("/api/auth/google/callback", 
     passport.authenticate("google", { failureRedirect: "/?error=auth" }),
