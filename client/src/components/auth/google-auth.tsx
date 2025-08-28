@@ -15,7 +15,7 @@ export default function GoogleAuth() {
     if (errorParam === 'auth' || errorParam === 'auth_failed') {
       setError('Authentication failed. Please try again.');
     } else if (errorParam === 'access_denied' || errorParam === 'domain_restricted') {
-      setError('Access denied. Only @google.com email addresses are allowed to access Pulse. Please use your Google corporate email address.');
+      setError('Access denied. Only @google.com, @meta.com, and @amazon.com email addresses are allowed to access Pulse. Please use your corporate email address.');
     }
     
     // Clear error from URL
