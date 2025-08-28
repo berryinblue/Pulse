@@ -1,0 +1,287 @@
+# Pulse — MVP Specification (LinkedIn × Eventbrite × Blind for Employees)
+
+**One‑liner:** A verified, employee‑only hub to discover, host, and join internal social + career events without chasing mailing lists or Slack noise.
+
+---
+
+## 1) Goals & Non‑Goals
+
+**Goals (MVP):**
+
+* Verify users by work email (domain‑gated spaces; e.g., `@google.com`).
+* Centralized event feed with filters (location, tags, virtual).
+* Lightweight hosting flow (title, time, capacity, visibility, allowed domains).
+* RSVP + waitlist; add to personal calendar (ICS download).
+* Basic safety: report event/user, block organizer, domain‑only visibility.
+* Metrics: signups, events created, RSVPs, WAU/MAU, retention.
+
+**Non‑Goals (MVP):**
+
+* Integrations with corporate calendars (write access) — **out of scope**.
+* Full chat/messaging, payments/ticketing, mobile apps.
+* Deep HR analytics or manager dashboards.
+
+---
+
+## 2) Personas & Core Jobs-to-be-Done
+
+* **New hire / remote Googler:** “Show me what’s happening this week that I’m eligible for.”
+* **Organizer/host:** “Reach the right coworkers quickly without spamming lists.”
+* **Connector:** “Create recurring coffee walks / book club with verified colleagues.”
+
+**JTBD:** Discover → Decide → RSVP → Attend → (Optionally) connect post‑event.
+
+---
+
+## 3) User Stories (MVP Acceptance)
+
+* As a Googler, I sign in with my Google account and land on a feed of events open to `@google.com`.
+* As a host, I can create an event (title, description, tags, location/virtual, start/end, capacity, visibility: company‑only or allowlisted domains) in <2 minutes.
+* As an attendee, I can RSVP (or get waitlisted), see who’s going (name+avatar, company‑only), and add an .ics to my personal calendar.
+* As a user, I can filter by campus, tags, time window, and virtual vs. in‑person.
+* As a user, I can report an event for moderation.
+* As the founder, I can view a private `/admin/stats` with core usage metrics.
+
+---
+
+## 4) System Overview
+
+**Employee‑driven**, domain‑verified event network. No company procurement needed. Verify once → switch to preferred email for notifications if desired.
+
+---
+
+## 5) Architecture (Replit‑friendly)
+
+**Frontend:**
+
+* React (Vite) or simple server‑rendered EJS for speed. Minimal Tailwind UI.
+
+**Backend:**
+
+* Node.js + Express. Input validation via Zod. Session via signed cookies.
+* Auth: **Google OAuth** (targeting `@google.com` initially); fallback **magic link** for other domains later.
+
+**Database:**
+
+* **SQLite** (on Replit persistent FS) for MVP. Migrate to Postgres (Supabase/Neon) if needed.
+* ORM: Prisma (auto migrations; type‑safe).
+
+**Email (optional for magic links/reminders):** Resend/Postmark/SendGrid.
+
+**Static files:** Replit hosting. Healthcheck endpoint `/healthz`.
+
+**Rate‑limiting & Security:** `express-rate-limit`, helmet, CORS locked to site origin.
+
+**Telemetry:**
+
+* **Product analytics:** PostHog (client + server) **and** server‑side write to `analytics_events` table.
+* **Logs:** pino logger to stdout; capture 4xx/5xx with request ids.
+
+---
+
+## 6) Data Model (Prisma/SQL sketch)
+
+```sql
+-- users
+id (pk), email (unique), domain, display_name, avatar_url, verified_at, created_at, updated_at
+
+-- companies
+id (pk), name, domain (unique), created_at
+
+-- events
+id (pk), company_id (fk), creator_user_id (fk), title, description, tags_json,
+location_text, is_virtual, start_at, end_at, capacity, visibility_enum, allowed_domains_json,
+created_at, updated_at, status_enum
+
+-- event_rsvps
+id (pk), event_id (fk), user_id (fk), status_enum('yes','waitlist','cancelled'), attended_bool,
+created_at, updated_at
+
+-- reports
+id (pk), reporter_user_id (fk), target_type_enum('event','user'), target_id, reason_text,
+created_at, status_enum('open','triaged','closed')
+
+-- email_verifications (for magic link fallback)
+id (pk), email, token_hash, created_at, consumed_at
+
+-- analytics_events
+id (pk), user_id (nullable), session_id, event_name, props_json, ts
+```
+
+**Visibility rules:**
+
+* An event is visible if (a) user.domain == event.company.domain and event.visibility in \['company\_only','cross\_company'] and (b) if `allowed_domains_json` exists, `user.domain` ∈ list.
+
+---
+
+## 7) API Endpoints (MVP)
+
+**Auth**
+
+* `GET /auth/google` → Google OAuth; restrict to configured domains (start with `google.com`).
+* `GET /auth/google/callback` → create/find user, set session.
+* `POST /auth/magic` → request link (non‑Google pilot).
+* `GET /auth/verify?token=...` → complete magic link.
+* `GET /me` → current user profile.
+
+**Events**
+
+* `GET /events?query&tags&from&to&virtual&campus` → list feed.
+* `POST /events` (auth) → create.
+* `GET /events/:id` → details + attendees (company‑visible only).
+* `POST /events/:id/rsvp` → {status: yes}. Auto‑waitlist if full.
+* `DELETE /events/:id/rsvp` → cancel.
+* `GET /events/:id/ics` → single‑event ICS download.
+
+**Moderation**
+
+* `POST /events/:id/report` → create report.
+
+**Admin**
+
+* `GET /admin/stats` (founder‑only) → metrics snapshot (see §9).
+
+---
+
+## 8) UI Flow (MVP)
+
+1. **Landing**: headline + Sign in with Google → domain‑gated.
+2. **Feed**: upcoming events; filters (tags, campus, virtual).
+3. **Create**: compact form; preview; publish.
+4. **Event Page**: title, desc, tags, host, start/end, capacity, “who’s going”, RSVP, ICS button, report link.
+5. **Profile**: display name, avatar, domain, interests (used for recs later).
+
+**Design Tone:** clean, fast, friendly; emojis allowed in titles.
+
+---
+
+## 9) Metrics & Instrumentation (MVP)
+
+**Core KPIs**
+
+* **Verified Users**: total & by domain.
+* **Active Users**: DAU/WAU/MAU; WAU/MAU ratio.
+* **Event Supply**: events created/week; % created by non‑founder.
+* **RSVP Demand**: RSVPs per event; RSVP conversion rate (event\_view → rsvp).
+* **Retention**: W+1, W+4 retention; % users with ≥2 events attended.
+
+**Event Dictionary (track both client + server)**
+
+* `user_signed_up` {domain}
+* `user_verified` {domain}
+* `feed_viewed` {filters}
+* `event_created` {tags, capacity, visibility}
+* `event_viewed` {event\_id}
+* `rsvp_yes` {event\_id}
+* `rsvp_cancel` {event\_id}
+* `ics_downloaded` {event\_id}
+* `report_submitted` {target}
+
+**Instrumentation Plan**
+
+* Client: PostHog JS snippet → fire events; include anon `session_id`.
+* Server: mirror writes into `analytics_events` (authoritative). Nightly rollups for `/admin/stats`.
+* Dashboard: `/admin/stats` shows sparklines for Users, Events, RSVPs (last 7/28 days), plus top tags.
+
+---
+
+## 10) Privacy, Trust & Safety
+
+* **Verification:** Google OAuth (email + domain only). No drive/calendar scopes.
+* **Privacy posture:** employer cannot see usage; no enterprise SSO required to start. Clear privacy page.
+* **Visibility:** company‑only by default; cross‑company allowed via allowlist.
+* **Moderation:** report flows; founder can hide events/users; rate‑limit posting & RSVPs; profanity filter on titles.
+* **Data rights:** delete account + data export endpoints planned.
+
+---
+
+## 11) Replit Setup Checklist
+
+* Create Node.js Repl; enable **Always On**.
+* **Env vars:**
+
+  * `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OAUTH_REDIRECT_URL`
+  * `SESSION_SECRET`
+  * `DATABASE_URL` (e.g., `file:./dev.db` for SQLite/Prisma)
+  * `RESEND_API_KEY` (if using magic links/reminders)
+  * `POSTHOG_KEY`, `POSTHOG_HOST` (optional; default cloud)
+  * `ADMIN_EMAILS` (comma‑separated for `/admin/*`)
+* Install deps: `express`, `zod`, `helmet`, `express-rate-limit`, `cookie-session`, `passport`, `passport-google-oauth20`, `prisma`, `@prisma/client`, `ics`, `pino`, `posthog-node`.
+* Prisma: init schema → migrate → seed admin user.
+* Healthcheck: `GET /healthz` returns 200 + build hash.
+* Uptime ping (optional) via external cron.
+
+---
+
+## 12) Acceptance Criteria (MVP Done)
+
+* A new Googler can sign in and see a populated feed (seeded events present).
+* A host can publish an event; another user can find it via feed filter and RSVP.
+* Event capacity respected; waitlist works; ICS adds to personal calendar.
+* Basic moderation: reporting hides content after admin action.
+* `/admin/stats` renders with non‑empty metrics pulled from DB rollups.
+
+---
+
+## 13) Seed & Launch Plan (Google‑first)
+
+* **Seed supply:** import 20–30 near‑term events from existing lists; add 5 fun socials (boba run, walk & talk, karaoke night).
+* **Internal distribution:** share link in relevant Chat rooms & communities (women@, fitness@, hobby groups), plus onboarding circles.
+* **Hooks:** “Top 10 events this week” digest; ICS convenience; tasteful emoji titles; visible attendee list (company‑only) to drive FOMO.
+* **Feedback loop:** lightweight in‑app feedback widget; triage weekly.
+
+---
+
+## 14) Nice‑to‑Have Backlog (Post‑MVP)
+
+* Coffee Roulette ☕ weekly opt‑in pairings.
+* Groups/micro‑communities with recurring events.
+* Cross‑company invites (allowlist multiple domains per event).
+* Anonymous Q\&A mode on event pages (Blind‑style).
+* Personal weekly digest emails; “Follow tags/offices”.
+* Post‑event connection suggestions ("You both attended Android Talk").
+
+---
+
+## 15) Security Notes
+
+* Enforce domain allowlist at auth layer; store immutable `user.domain`.
+* Sanitize HTML; limit description length; strip scripts; image uploads disabled in MVP.
+* Abuse limits: max events/day/user, max RSVPs/minute, IP + account throttles.
+
+---
+
+## 16) Example Snippets (Illustrative)
+
+**PostHog client (pseudo‑code):**
+
+```js
+posthog.init(POSTHOG_KEY, { api_host: POSTHOG_HOST });
+posthog.capture('event_viewed', { event_id });
+```
+
+**Server analytics mirror:**
+
+```ts
+app.post('/rsvp', authed, async (req, res) => {
+  // ... create RSVP
+  await db.analytics_events.create({
+    data: { user_id: req.user.id, session_id: req.cookies.sid, event_name: 'rsvp_yes', props_json: { event_id }, ts: new Date() }
+  });
+  posthog.capture({ distinctId: req.user.id, event: 'rsvp_yes', properties: { event_id } });
+});
+```
+
+---
+
+## 17) Risks & Mitigations
+
+* **Cold start:** seed 30+ events; founder‑hosted socials; weekly digest.
+* **Spam/inappropriate posts:** reports, rate limits, soft‑delete moderation queue.
+* **Scale limits (Replit/SQLite):** add read replicas via SQLite snapshots or migrate to Postgres (Supabase/Neon) if WAU > 1k.
+
+---
+
+## 18) North‑Star Narrative (For Replit/Acquirers)
+
+> Within weeks of a quiet internal launch, hundreds of verified Googlers used Pulse to discover and RSVP to events that were previously buried in mailing lists. Organizers reached the right audiences without spam. Engagement metrics (WAU/MAU, RSVPs/event, retention) demonstrate a sticky employee social layer that existing intranets don’t provide.
