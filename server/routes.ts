@@ -23,7 +23,7 @@ const sessionConfig = {
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
-const ALLOWED_DOMAINS = (process.env.ALLOWED_DOMAINS || "google.com").split(",");
+const ALLOWED_DOMAINS = (process.env.ALLOWED_DOMAINS || "google.com,gmail.com").split(",");
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",");
 
 // Get the current URL dynamically
