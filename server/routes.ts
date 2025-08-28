@@ -26,10 +26,31 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
 const ALLOWED_DOMAINS = (process.env.ALLOWED_DOMAINS || "google.com").split(",");
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",");
 
+// Get the current URL dynamically
+const getCallbackURL = () => {
+  const devDomain = process.env.REPLIT_DEV_DOMAIN;
+  const domains = process.env.REPLIT_DOMAINS;
+  
+  let callbackUrl;
+  if (devDomain) {
+    callbackUrl = `https://${devDomain}/api/auth/google/callback`;
+  } else if (domains) {
+    // Use the first domain from REPLIT_DOMAINS
+    const firstDomain = domains.split(',')[0];
+    callbackUrl = `https://${firstDomain}/api/auth/google/callback`;
+  } else {
+    // Fallback for local development
+    callbackUrl = "http://localhost:5000/api/auth/google/callback";
+  }
+  
+  console.log(`🔑 OAuth Callback URL: ${callbackUrl}`);
+  return callbackUrl;
+};
+
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: "/api/auth/google/callback"
+  callbackURL: getCallbackURL()
 }, async (accessToken, refreshToken, profile, done) => {
   try {
     const email = profile.emails?.[0]?.value;
