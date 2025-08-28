@@ -98,6 +98,8 @@ export const insertEventSchema = createInsertSchema(events).omit({
   tags: z.array(z.string()).optional(),
   allowedDomains: z.array(z.string()).optional(),
   campus: z.string().optional(),
+  startAt: z.string().transform((val) => new Date(val)),
+  endAt: z.string().transform((val) => new Date(val)),
 }).transform((data) => ({
   ...data,
   tagsJson: data.tags,

@@ -66,11 +66,11 @@ export default function CreateEvent() {
 
   const createEventMutation = useMutation({
     mutationFn: async (data: CreateEventForm) => {
-      // Convert string dates to Date objects for the backend
+      // Keep dates as strings - backend will handle conversion
       const eventData = {
         ...data,
-        startAt: new Date(data.startAt),
-        endAt: new Date(data.endAt),
+        tags: selectedTags,
+        capacity: data.capacity || undefined,
       };
       const response = await apiRequest("POST", "/api/events", eventData);
       return response.json();
@@ -93,11 +93,7 @@ export default function CreateEvent() {
   });
 
   const onSubmit = (data: CreateEventForm) => {
-    createEventMutation.mutate({
-      ...data,
-      tags: selectedTags,
-      capacity: data.capacity || undefined,
-    });
+    createEventMutation.mutate(data);
   };
 
   const toggleTag = (tag: string) => {
