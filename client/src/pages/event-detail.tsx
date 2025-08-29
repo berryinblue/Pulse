@@ -395,7 +395,7 @@ export default function EventDetail() {
                   data-testid="button-register"
                 >
                   <i className="fas fa-check mr-2"></i>
-                  {event.userRsvpStatus === "yes" || event.userRsvpStatus === "waitlist" ? "Cancel Registration" : "Register"}
+                  {event.userRsvpStatus === "yes" || event.userRsvpStatus === "waitlist" ? "Cancel" : "Join"}
                 </Button>
               )}
             </div>
