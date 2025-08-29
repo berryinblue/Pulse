@@ -2,10 +2,11 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, and, desc, gte, lte, ilike, sql, count, inArray, ne } from "drizzle-orm";
 import { 
-  users, companies, events, eventRsvps, reports, analyticsEvents,
+  users, companies, events, eventRsvps, reports, analyticsEvents, eventComments,
   type User, type InsertUser, type Company, type InsertCompany,
   type Event, type InsertEvent, type EventRsvp, type InsertEventRsvp,
-  type Report, type InsertReport, type AnalyticsEvent, type InsertAnalyticsEvent
+  type Report, type InsertReport, type AnalyticsEvent, type InsertAnalyticsEvent,
+  type EventComment, type InsertEventComment
 } from "@shared/schema";
 
 const db = drizzle(neon(process.env.DATABASE_URL!), { 
@@ -67,6 +68,11 @@ export interface IStorage {
     recentRsvps: number;
     topTags: { tag: string; count: number }[];
   }>;
+  
+  // Comments
+  createComment(comment: InsertEventComment): Promise<EventComment>;
+  getEventComments(eventId: string): Promise<(EventComment & { user: User; replies?: (EventComment & { user: User })[] })[]>;
+  deleteComment(commentId: string, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -518,6 +524,68 @@ export class DatabaseStorage implements IStorage {
       recentRsvps: Number(recentRsvps.count),
       topTags,
     };
+  }
+
+  // Comments
+  async createComment(comment: InsertEventComment): Promise<EventComment> {
+    const result = await db.insert(eventComments).values(comment).returning();
+    return result[0];
+  }
+
+  async getEventComments(eventId: string): Promise<(EventComment & { user: User; replies?: (EventComment & { user: User })[] })[]> {
+    // Get all comments for the event
+    const allComments = await db
+      .select({
+        id: eventComments.id,
+        eventId: eventComments.eventId,
+        userId: eventComments.userId,
+        parentCommentId: eventComments.parentCommentId,
+        content: eventComments.content,
+        createdAt: eventComments.createdAt,
+        updatedAt: eventComments.updatedAt,
+        user: {
+          id: users.id,
+          email: users.email,
+          domain: users.domain,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
+          verifiedAt: users.verifiedAt,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        },
+      })
+      .from(eventComments)
+      .innerJoin(users, eq(eventComments.userId, users.id))
+      .where(eq(eventComments.eventId, eventId))
+      .orderBy(desc(eventComments.createdAt));
+
+    // Separate top-level comments and replies
+    const topLevelComments = allComments.filter(comment => !comment.parentCommentId);
+    const replies = allComments.filter(comment => comment.parentCommentId);
+
+    // Group replies by parent comment ID
+    const repliesByParent = replies.reduce((acc, reply) => {
+      if (!acc[reply.parentCommentId!]) {
+        acc[reply.parentCommentId!] = [];
+      }
+      acc[reply.parentCommentId!].push(reply);
+      return acc;
+    }, {} as Record<string, typeof replies>);
+
+    // Attach replies to their parent comments
+    const commentsWithReplies = topLevelComments.map(comment => ({
+      ...comment,
+      replies: repliesByParent[comment.id] || []
+    }));
+
+    return commentsWithReplies as any[];
+  }
+
+  async deleteComment(commentId: string, userId: string): Promise<void> {
+    // Only allow users to delete their own comments
+    await db
+      .delete(eventComments)
+      .where(and(eq(eventComments.id, commentId), eq(eventComments.userId, userId)));
   }
 }
 

@@ -78,6 +78,16 @@ export const analyticsEvents = pgTable("analytics_events", {
   ts: timestamp("ts").defaultNow(),
 });
 
+export const eventComments = pgTable("event_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").references(() => events.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  parentCommentId: varchar("parent_comment_id").references(() => eventComments.id), // For replies
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -131,6 +141,12 @@ export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).om
   ts: true,
 });
 
+export const insertEventCommentSchema = createInsertSchema(eventComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -144,3 +160,5 @@ export type Report = typeof reports.$inferSelect;
 export type InsertReport = z.infer<typeof insertReportSchema>;
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
 export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
+export type EventComment = typeof eventComments.$inferSelect;
+export type InsertEventComment = z.infer<typeof insertEventCommentSchema>;

@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
 import { useState } from "react";
+import { EventComments } from "@/components/event-comments";
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -410,6 +411,16 @@ export default function EventDetail() {
                 </Button>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Comments Section */}
+        <Card>
+          <CardContent className="p-6">
+            <EventComments 
+              eventId={id!} 
+              currentUserId={currentUser?.id}
+            />
           </CardContent>
         </Card>
       </div>

@@ -723,6 +723,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comment routes
+  app.get("/api/events/:eventId/comments", async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const comments = await storage.getEventComments(eventId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Failed to fetch comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/events/:eventId/comments", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { eventId } = req.params;
+      const { content, parentCommentId } = req.body;
+
+      if (!content || typeof content !== 'string' || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+
+      if (content.trim().length > 1000) {
+        return res.status(400).json({ message: "Comment is too long" });
+      }
+
+      const comment = await storage.createComment({
+        eventId,
+        userId: user.id,
+        content: content.trim(),
+        parentCommentId: parentCommentId || null,
+      });
+
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Failed to create comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.delete("/api/comments/:commentId", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { commentId } = req.params;
+
+      await storage.deleteComment(commentId, user.id);
+      res.json({ message: "Comment deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/stats", requireAuth, requireAdmin, async (req, res) => {
     try {
