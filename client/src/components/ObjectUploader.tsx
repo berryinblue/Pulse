@@ -77,15 +77,23 @@ export function ObjectUploader({
 
   return (
     <div>
-      <Button 
+      <div 
         onClick={() => {
           console.log("Upload button clicked, opening modal"); // Debug log
           setShowModal(true);
         }} 
-        className={buttonClassName}
+        className={`cursor-pointer ${buttonClassName || ''}`}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            console.log("Upload button keyboard activated, opening modal"); // Debug log
+            setShowModal(true);
+          }
+        }}
       >
         {children}
-      </Button>
+      </div>
 
       <DashboardModal
         uppy={uppy}
