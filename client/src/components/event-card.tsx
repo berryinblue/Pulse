@@ -199,20 +199,21 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center">
-                <div className="flex -space-x-2 mr-2">
-                  <Avatar className="w-6 h-6 border-2 border-background">
-                    <AvatarImage src={event.creator.avatarUrl || undefined} />
-                    <AvatarFallback className="text-xs">
-                      {event.creator.displayName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {event.attendeeCount > 1 && (
-                    <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
-                      +{event.attendeeCount - 1}
-                    </div>
-                  )}
+              {/* Host profile picture - always visible */}
+              <div className="flex items-center space-x-2">
+                <Avatar className="w-7 h-7 border-2 border-background">
+                  <AvatarImage src={event.creator.avatarUrl || undefined} />
+                  <AvatarFallback className="text-xs">
+                    {event.creator.displayName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-sm text-muted-foreground">
+                  <div className="font-medium">Host: {event.creator.displayName}</div>
                 </div>
+              </div>
+              
+              {/* Attendee count */}
+              <div className="flex items-center">
                 <span className="text-sm text-muted-foreground" data-testid={`text-attendee-count-${event.id}`}>
                   {event.attendeeCount} going
                 </span>
@@ -275,31 +276,32 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
         </div>
         
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {event.attendeeCount > 0 ? (
-              <>
-                <div className="flex -space-x-1">
-                  <Avatar className="w-5 h-5 border border-background">
-                    <AvatarImage src={event.creator.avatarUrl || undefined} />
-                    <AvatarFallback className="text-xs">
-                      {event.creator.displayName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {event.attendeeCount > 1 && (
-                    <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center text-xs">
-                      +{event.attendeeCount - 1}
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground" data-testid={`text-attendee-count-${event.id}`}>
+          <div className="flex items-center space-x-3">
+            {/* Host profile picture - always visible */}
+            <div className="flex items-center space-x-2">
+              <Avatar className="w-6 h-6 border border-background">
+                <AvatarImage src={event.creator.avatarUrl || undefined} />
+                <AvatarFallback className="text-xs">
+                  {event.creator.displayName.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-xs text-muted-foreground">
+                <div className="font-medium">Host: {event.creator.displayName}</div>
+              </div>
+            </div>
+            
+            {/* Attendee count */}
+            <div className="text-xs text-muted-foreground">
+              {event.attendeeCount > 0 ? (
+                <span data-testid={`text-attendee-count-${event.id}`}>
                   {event.attendeeCount} going
                 </span>
-              </>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                {isAtCapacity ? 'Full' : 'Be the first to join'}
-              </span>
-            )}
+              ) : (
+                <span>
+                  {isAtCapacity ? 'Full' : 'Be the first to join'}
+                </span>
+              )}
+            </div>
           </div>
           
         </div>
