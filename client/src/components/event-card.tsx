@@ -52,9 +52,12 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
   // Use fresh data if available, fallback to initial event
   const event = freshEvent || initialEvent;
   
-  // Calculate attendeeCount from attendees array if using fresh data
+  // Calculate attendeeCount from attendees array if using fresh data (excluding host)
   if (freshEvent && freshEvent.attendees) {
-    event.attendeeCount = freshEvent.attendees.length;
+    const nonHostAttendees = freshEvent.attendees.filter((attendee: any) => attendee.id !== event.creatorUserId);
+    event.attendeeCount = nonHostAttendees.length;
+    // Store filtered attendees for display
+    event.nonHostAttendees = nonHostAttendees;
   }
 
   const rsvpMutation = useMutation({
@@ -217,7 +220,7 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
                 {event.attendeeCount > 0 ? (
                   <>
                     <div className="flex -space-x-2">
-                      {(freshEvent?.attendees || []).slice(0, 4).map((attendee: any, index: number) => (
+                      {(event.nonHostAttendees || freshEvent?.attendees?.filter((attendee: any) => attendee.id !== event.creatorUserId) || []).slice(0, 4).map((attendee: any, index: number) => (
                         <Avatar key={attendee.id} className="w-6 h-6 border-2 border-background" style={{ zIndex: 10 - index }}>
                           <AvatarImage src={attendee.avatarUrl || undefined} />
                           <AvatarFallback className="text-xs">
@@ -317,7 +320,7 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
               {event.attendeeCount > 0 ? (
                 <>
                   <div className="flex -space-x-1">
-                    {(freshEvent?.attendees || []).slice(0, 3).map((attendee: any, index: number) => (
+                    {(event.nonHostAttendees || freshEvent?.attendees?.filter((attendee: any) => attendee.id !== event.creatorUserId) || []).slice(0, 3).map((attendee: any, index: number) => (
                       <Avatar key={attendee.id} className="w-5 h-5 border border-background" style={{ zIndex: 10 - index }}>
                         <AvatarImage src={attendee.avatarUrl || undefined} />
                         <AvatarFallback className="text-xs">
