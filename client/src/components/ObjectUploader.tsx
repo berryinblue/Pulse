@@ -78,10 +78,7 @@ export function ObjectUploader({
   return (
     <div>
       <div 
-        onClick={() => {
-          console.log("Upload button clicked, opening modal"); // Debug log
-          setShowModal(true);
-        }} 
+        onClick={() => setShowModal(true)} 
         className={`cursor-pointer ${buttonClassName || ''}`}
         role="button"
         tabIndex={0}
@@ -98,10 +95,7 @@ export function ObjectUploader({
       <DashboardModal
         uppy={uppy}
         open={showModal}
-        onRequestClose={() => {
-          console.log("Upload modal closed"); // Debug log
-          setShowModal(false);
-        }}
+        onRequestClose={() => setShowModal(false)}
         proudlyDisplayPoweredByUppy={false}
       />
     </div>

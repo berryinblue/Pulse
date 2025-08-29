@@ -225,35 +225,26 @@ export default function CreateEvent() {
                         };
                       }}
                       onComplete={(result) => {
-                        console.log("Upload complete, result:", result); // Debug log
                         if (result.successful.length > 0) {
                           const uploadedFile = result.successful[0];
                           const imageUrl = uploadedFile.uploadURL;
-                          console.log("Upload successful, imageUrl:", imageUrl); // Debug log
                           if (imageUrl) {
                             // Set ACL policy for the uploaded image
-                            console.log("Calling /api/event-images with imageURL:", imageUrl); // Debug log
                             fetch("/api/event-images", {
                               method: "PUT",
                               headers: { "Content-Type": "application/json" },
                               credentials: "include",
                               body: JSON.stringify({ imageURL: imageUrl }),
                             })
-                            .then(res => {
-                              console.log("ACL response status:", res.status); // Debug log
-                              return res.json();
-                            })
+                            .then(res => res.json())
                             .then(data => {
-                              console.log("ACL response data:", data); // Debug log
                               setEventImageUrl(data.objectPath);
-                              console.log("Set eventImageUrl to:", data.objectPath); // Debug log
                               toast({
                                 title: "Image uploaded!",
                                 description: "Your cover image looks great.",
                               });
                             })
                             .catch((error) => {
-                              console.error("ACL setting failed:", error); // Debug log
                               toast({
                                 title: "Upload failed",
                                 description: "Please try again.",
@@ -262,7 +253,6 @@ export default function CreateEvent() {
                             });
                           }
                         } else {
-                          console.log("Upload failed, no successful files"); // Debug log
                         }
                       }}
                       buttonClassName="w-full h-48 border-2 border-dashed border-gray-300 hover:border-primary/50 hover:bg-gray-50 transition-colors rounded-lg"
