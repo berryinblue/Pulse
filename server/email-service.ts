@@ -171,6 +171,36 @@ export class EmailService {
       html,
     });
   }
+
+  // Event cancellation email for attendees
+  async sendEventCancellationEmail(
+    userEmail: string,
+    userName: string,
+    eventTitle: string
+  ): Promise<boolean> {
+    const subject = `Event Cancelled: ${eventTitle}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #dc2626; text-align: center;">🚫 Event Cancelled</h1>
+        <p>Hi ${userName},</p>
+        <p>We regret to inform you that the following event has been cancelled:</p>
+        
+        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h2 style="margin-top: 0; color: #1e293b;">${eventTitle}</h2>
+        </div>
+        
+        <p>We apologize for any inconvenience this may cause. Please check the Pulse platform for other upcoming events you might be interested in.</p>
+        
+        <p>Best regards,<br>The Pulse Team</p>
+      </div>
+    `;
+
+    return this.sendEmail({
+      to: userEmail,
+      subject,
+      html,
+    });
+  }
 }
 
 export const emailService = EmailService.getInstance();

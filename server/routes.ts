@@ -317,6 +317,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/events/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const eventId = req.params.id;
+      
+      // Check if user is the event creator
+      const existingEvent = await storage.getEvent(eventId);
+      if (!existingEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (existingEvent.creatorUserId !== user.id) {
+        return res.status(403).json({ message: "Only event creator can cancel this event" });
+      }
+      
+      // Get all attendees for notification emails
+      const attendees = await storage.getEventAttendees(eventId);
+      
+      // Send cancellation notifications to all attendees
+      for (const attendee of attendees) {
+        try {
+          emailService.sendEventCancellationEmail(
+            attendee.email,
+            attendee.displayName || attendee.email.split("@")[0],
+            existingEvent.title
+          );
+        } catch (emailError) {
+          console.error(`Failed to send cancellation email to ${attendee.email}:`, emailError);
+        }
+      }
+      
+      // Delete the event
+      await storage.deleteEvent(eventId);
+      
+      // Track event cancellation
+      await storage.createAnalyticsEvent({
+        userId: user.id,
+        sessionId: req.sessionID,
+        eventName: "event_cancelled",
+        propsJson: { eventId: eventId },
+      });
+
+      res.json({ message: "Event cancelled successfully" });
+    } catch (error) {
+      console.error("Event cancellation error:", error);
+      res.status(500).json({ message: "Failed to cancel event" });
+    }
+  });
+
   app.post("/api/events/:id/rsvp", requireAuth, async (req, res) => {
     try {
       const user = req.user as any;

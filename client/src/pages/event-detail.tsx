@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
+import { useState } from "react";
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -17,6 +19,7 @@ export default function EventDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: currentUser } = useAuth();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const goBack = () => {
     setLocation("/");
@@ -51,6 +54,28 @@ export default function EventDetail() {
       toast({
         title: "Error",
         description: "Failed to update RSVP. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const cancelEventMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("DELETE", `/api/events/${id}`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({
+        title: "Event Cancelled",
+        description: "The event has been cancelled and attendees have been notified.",
+      });
+      setLocation("/");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to cancel event. Please try again.",
         variant: "destructive",
       });
     },
@@ -310,16 +335,67 @@ export default function EventDetail() {
                   </Button>
                 )}
               </div>
-              {!isEventCreator && (
+              {isEventCreator ? (
+                <div className="flex space-x-3">
+                  <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="lg"
+                        data-testid="button-cancel-event"
+                      >
+                        <i className="fas fa-times mr-2"></i>
+                        Cancel Event
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Cancel Event</DialogTitle>
+                        <DialogDescription>
+                          Are you sure you want to cancel this event? All attendees will be notified by email and this action cannot be undone.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowCancelDialog(false)}
+                        >
+                          Keep Event
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => {
+                            cancelEventMutation.mutate();
+                            setShowCancelDialog(false);
+                          }}
+                          disabled={cancelEventMutation.isPending}
+                        >
+                          {cancelEventMutation.isPending ? "Canceling..." : "Yes, Cancel Event"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setLocation(`/events/${id}/edit`)}
+                    data-testid="button-modify-event"
+                  >
+                    <i className="fas fa-edit mr-2"></i>
+                    Modify Event
+                  </Button>
+                </div>
+              ) : (
                 <Button
                   onClick={handleRsvp}
                   disabled={rsvpMutation.isPending}
                   variant={getRsvpButtonVariant() as any}
                   size="lg"
-                  data-testid="button-rsvp-main"
+                  data-testid="button-register"
                 >
                   <i className="fas fa-check mr-2"></i>
-                  {getRsvpButtonText()}
+                  {event.userRsvpStatus === "yes" || event.userRsvpStatus === "waitlist" ? "Cancel Registration" : "Register"}
                 </Button>
               )}
             </div>

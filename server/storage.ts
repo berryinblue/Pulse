@@ -41,6 +41,7 @@ export interface IStorage {
   }) | undefined>;
   createEvent(event: InsertEvent): Promise<Event>;
   updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event>;
+  deleteEvent(id: string): Promise<void>;
   getEventAttendees(eventId: string): Promise<User[]>;
   getUserEvents(userId: string): Promise<any[]>;
   getEventsByCreator(userId: string): Promise<(Event & { creator: User; rsvpCount: number })[]>;
@@ -289,6 +290,14 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return result[0];
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    // First delete all RSVPs for this event
+    await db.delete(eventRsvps).where(eq(eventRsvps.eventId, id));
+    
+    // Then delete the event itself
+    await db.delete(events).where(eq(events.id, id));
   }
 
   async getEventAttendees(eventId: string): Promise<User[]> {
