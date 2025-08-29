@@ -220,7 +220,13 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
           <div className="flex items-center">
             <i className="fas fa-calendar-alt mr-2 w-3"></i>
             <span data-testid={`text-event-date-${event.id}`}>
-              {format(startDate, 'EEE, MMM d • h:mm a')}
+              {format(startDate, 'EEE, MMM d')}
+            </span>
+          </div>
+          <div className="flex items-center">
+            <i className="fas fa-clock mr-2 w-3"></i>
+            <span data-testid={`text-event-time-${event.id}`}>
+              {format(startDate, 'h:mm a')} - {format(endDate, 'h:mm a')}
             </span>
           </div>
           <div className="flex items-center">
