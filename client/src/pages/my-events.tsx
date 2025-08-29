@@ -1,165 +1,17 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns";
-
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  startAt: string;
-  endAt: string;
-  locationText: string;
-  isVirtual: boolean;
-  capacity: number | null;
-  statusEnum: string;
-  tagsJson: string[];
-  imageUrl: string | null;
-  creator: {
-    displayName: string;
-    avatarUrl: string | null;
-  };
-  rsvpCount: number;
-  userRsvpStatus: string | null;
-}
-
-interface EventCardProps {
-  event: Event;
-  showStatus?: boolean;
-  showRsvpStatus?: boolean;
-}
-
-function EventCard({ event, showStatus = false, showRsvpStatus = false }: EventCardProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "cancelled": return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      case "hidden": return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-      default: return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-    }
-  };
-
-  const getRsvpStatusColor = (status: string) => {
-    switch (status) {
-      case "yes": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "waitlist": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case "cancelled": return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-    }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  return (
-    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-      {event.imageUrl ? (
-        <div className="h-32 w-full overflow-hidden">
-          <img 
-            src={event.imageUrl} 
-            alt={event.title}
-            className="h-full w-full object-cover transition-transform hover:scale-105"
-          />
-        </div>
-      ) : (
-        <div className="h-32 bg-gradient-to-r from-primary/20 to-accent/20"></div>
-      )}
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <Link href={`/events/${event.id}`}>
-              <h3 className="text-lg font-semibold hover:text-primary cursor-pointer mb-2" data-testid={`text-event-title-${event.id}`}>
-                {event.title}
-              </h3>
-            </Link>
-            <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
-              {event.description}
-            </p>
-          </div>
-          <div className="flex flex-col items-end space-y-2">
-            {showStatus && (
-              <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs" data-testid={`badge-status-${event.id}`}>
-                {event.statusEnum === "active" ? "Hosting" : event.statusEnum}
-              </Badge>
-            )}
-            {showRsvpStatus && event.userRsvpStatus && (
-              <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs" data-testid={`badge-rsvp-${event.id}`}>
-                {event.userRsvpStatus === "yes" ? "Going" : event.userRsvpStatus}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <i className="fas fa-calendar mr-2 w-4"></i>
-            <span data-testid={`text-event-date-${event.id}`}>
-              {format(new Date(event.startAt), "MMM d, yyyy 'at' h:mm a")}
-            </span>
-          </div>
-
-          <div className="flex items-center text-sm text-muted-foreground">
-            <i className={`${event.isVirtual ? "fas fa-video" : "fas fa-map-marker-alt"} mr-2 w-4`}></i>
-            <span data-testid={`text-event-location-${event.id}`}>
-              {event.isVirtual ? "Virtual Event" : (event.locationText || "Location TBD")}
-            </span>
-          </div>
-
-          {event.capacity && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <i className="fas fa-users mr-2 w-4"></i>
-              <span data-testid={`text-event-capacity-${event.id}`}>
-                {event.rsvpCount} / {event.capacity} attendees
-              </span>
-            </div>
-          )}
-
-          <div className="flex items-center space-x-2">
-            <Avatar className="w-6 h-6">
-              <AvatarImage src={event.creator.avatarUrl || undefined} />
-              <AvatarFallback className="text-xs">
-                {getInitials(event.creator.displayName)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-sm text-muted-foreground" data-testid={`text-event-creator-${event.id}`}>
-              by {event.creator.displayName}
-            </span>
-          </div>
-
-          {event.tagsJson && event.tagsJson.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {event.tagsJson.map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs" data-testid={`tag-${tag.toLowerCase()}-${event.id}`}>
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+import EventCard from "@/components/event-card";
 
 export default function MyEvents() {
-  const { data: createdEvents = [], isLoading: createdLoading } = useQuery<Event[]>({
+  const { data: createdEvents = [], isLoading: createdLoading } = useQuery({
     queryKey: ["/api/events/created"],
   });
 
-  const { data: rsvpedEvents = [], isLoading: rsvpedLoading } = useQuery<Event[]>({
+  const { data: rsvpedEvents = [], isLoading: rsvpedLoading } = useQuery({
     queryKey: ["/api/events/rsvped"],
   });
 
@@ -227,13 +79,9 @@ export default function MyEvents() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {createdEvents.map((event: Event) => (
-                  <EventCard 
-                    key={event.id} 
-                    event={event} 
-                    showStatus={true}
-                  />
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {createdEvents.map((event: any) => (
+                  <EventCard key={event.id} event={event} />
                 ))}
               </div>
             )}
@@ -257,13 +105,9 @@ export default function MyEvents() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {rsvpedEvents.map((event: Event) => (
-                  <EventCard 
-                    key={event.id} 
-                    event={event} 
-                    showRsvpStatus={true}
-                  />
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {rsvpedEvents.map((event: any) => (
+                  <EventCard key={event.id} event={event} />
                 ))}
               </div>
             )}

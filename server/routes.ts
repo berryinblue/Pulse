@@ -580,9 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updateData = updateEventSchema.parse(req.body);
       
-      console.log("Update data before storage.updateEvent:", updateData);
       const updatedEvent = await storage.updateEvent(eventId, updateData);
-      console.log("Updated event returned from storage:", updatedEvent);
       
       // Get all attendees for notification emails
       const attendees = await storage.getEventAttendees(eventId);
