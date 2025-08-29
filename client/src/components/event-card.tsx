@@ -137,8 +137,9 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
 
   if (featured) {
     return (
-      <Card className={`${featured ? 'md:col-span-2 xl:col-span-3' : ''} overflow-hidden shadow-sm hover:shadow-md transition-shadow`}>
-        {/* Featured events would have an image, but we don't generate binary files */}
+      <Link href={`/events/${event.id}`} className="block">
+        <Card className={`${featured ? 'md:col-span-2 xl:col-span-3' : ''} overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer`}>
+          {/* Featured events would have an image, but we don't generate binary files */}
         <div className="h-48 bg-gradient-to-r from-primary/20 to-accent/20"></div>
         <CardContent className="p-6">
           <div className="flex items-start justify-between mb-4">
@@ -152,11 +153,9 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
                   <Badge key={tag} variant="secondary">{tag}</Badge>
                 ))}
               </div>
-              <Link href={`/events/${event.id}`}>
-                <h3 className="text-xl font-semibold mb-2 hover:text-primary cursor-pointer" data-testid={`text-event-title-${event.id}`}>
-                  {event.title}
-                </h3>
-              </Link>
+              <h3 className="text-xl font-semibold mb-2 hover:text-primary cursor-pointer" data-testid={`text-event-title-${event.id}`}>
+                {event.title}
+              </h3>
               <p className="text-muted-foreground text-sm mb-4" data-testid={`text-event-description-${event.id}`}>
                 {event.description}
               </p>
@@ -216,12 +215,14 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
             
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </Link>
     );
   }
 
   return (
-    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+    <Link href={`/events/${event.id}`} className="block">
+      <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
       {/* Regular events would have images, but we don't generate binary files */}
       <div className="h-32 bg-gradient-to-r from-primary/20 to-accent/20"></div>
       <CardContent className="p-4">
@@ -236,11 +237,9 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
           ))}
         </div>
         
-        <Link href={`/events/${event.id}`}>
-          <h4 className="font-medium mb-2 hover:text-primary" data-testid={`text-event-title-${event.id}`}>
-            {event.title}
-          </h4>
-        </Link>
+        <h4 className="font-medium mb-2 hover:text-primary" data-testid={`text-event-title-${event.id}`}>
+          {event.title}
+        </h4>
         
         <div className="space-y-1 text-xs text-muted-foreground mb-3">
           <div className="flex items-center">
@@ -294,5 +293,6 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }

@@ -193,9 +193,19 @@ export default function EventDetail() {
                   {tags.map((tag: string) => (
                     <Badge key={tag} variant="secondary">{tag}</Badge>
                   ))}
-                  {event.userRsvpStatus && (
-                    <Badge variant={event.userRsvpStatus === "yes" ? "default" : "secondary"}>
-                      {event.userRsvpStatus === "yes" ? "Going" : "Waitlisted"}
+                  {event.userRsvpStatus === "yes" && (
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                      Going
+                    </Badge>
+                  )}
+                  {event.userRsvpStatus === "waitlist" && (
+                    <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                      Waitlisted
+                    </Badge>
+                  )}
+                  {event.userRsvpStatus === "no" && (
+                    <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">
+                      Not Going
                     </Badge>
                   )}
                 </div>
