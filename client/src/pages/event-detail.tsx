@@ -242,10 +242,18 @@ export default function EventDetail() {
                     <i className="fas fa-calendar-alt mr-3 w-5 text-muted-foreground"></i>
                     <div>
                       <div className="font-medium" data-testid="text-event-date">
-                        {format(startDate, 'EEEE, MMMM d, yyyy')}
+                        {startDate.toDateString() === endDate.toDateString() ? (
+                          format(startDate, 'EEEE, MMMM d, yyyy')
+                        ) : (
+                          `${format(startDate, 'EEEE, MMMM d, yyyy')} - ${format(endDate, 'EEEE, MMMM d, yyyy')}`
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground" data-testid="text-event-time">
-                        {format(startDate, 'h:mm a')} - {format(endDate, 'h:mm a')}
+                        {startDate.toDateString() === endDate.toDateString() ? (
+                          `${format(startDate, 'h:mm a')} - ${format(endDate, 'h:mm a')}`
+                        ) : (
+                          `${format(startDate, 'MMMM d, h:mm a')} - ${format(endDate, 'MMMM d, h:mm a')}`
+                        )}
                       </div>
                     </div>
                   </div>
@@ -330,16 +338,7 @@ export default function EventDetail() {
                   <i className="fas fa-calendar-plus mr-2"></i>
                   Add to Calendar
                 </Button>
-                {isEventCreator ? (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => window.location.href = `/events/${id}/edit`}
-                    data-testid="button-edit-event"
-                  >
-                    <i className="fas fa-edit mr-2"></i>
-                    Edit Event
-                  </Button>
-                ) : (
+                {!isEventCreator && (
                   <Button 
                     variant="outline" 
                     size="sm"
