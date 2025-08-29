@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq, and, desc, gte, lte, ilike, sql, count, inArray } from "drizzle-orm";
+import { eq, and, desc, gte, lte, ilike, sql, count, inArray, ne } from "drizzle-orm";
 import { 
   users, companies, events, eventRsvps, reports, analyticsEvents,
   type User, type InsertUser, type Company, type InsertCompany,
@@ -394,7 +394,11 @@ export class DatabaseStorage implements IStorage {
       .from(events)
       .innerJoin(users, eq(events.creatorUserId, users.id))
       .innerJoin(eventRsvps, eq(events.id, eventRsvps.eventId))
-      .where(and(eq(eventRsvps.userId, userId), eq(eventRsvps.statusEnum, "yes")))
+      .where(and(
+        eq(eventRsvps.userId, userId), 
+        eq(eventRsvps.statusEnum, "yes"),
+        ne(events.creatorUserId, userId)
+      ))
       .orderBy(desc(events.startAt));
 
     return result as any[];
