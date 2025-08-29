@@ -148,7 +148,7 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
                 <Badge variant="default">Featured</Badge>
                 {isEventCreator && <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Hosting</Badge>}
                 {!isEventCreator && event.userRsvpStatus === "yes" && <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Going</Badge>}
-                {!isEventCreator && event.userRsvpStatus === "no" && <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">Not Going</Badge>}
+                {!isEventCreator && (event.userRsvpStatus === "no" || event.userRsvpStatus === "cancelled") && <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">Not Going</Badge>}
                 {tags.map((tag) => (
                   <Badge key={tag} variant="secondary">{tag}</Badge>
                 ))}
@@ -229,7 +229,7 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
         <div className="flex items-center space-x-2 mb-2">
           {isEventCreator && <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs">Hosting</Badge>}
           {!isEventCreator && event.userRsvpStatus === "yes" && <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs">Going</Badge>}
-          {!isEventCreator && event.userRsvpStatus === "no" && <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100 text-xs">Not Going</Badge>}
+          {!isEventCreator && (event.userRsvpStatus === "no" || event.userRsvpStatus === "cancelled") && <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100 text-xs">Not Going</Badge>}
           {tags.map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">
               {tag}

@@ -203,7 +203,7 @@ export default function EventDetail() {
                       Waitlisted
                     </Badge>
                   )}
-                  {event.userRsvpStatus === "no" && (
+                  {(event.userRsvpStatus === "no" || event.userRsvpStatus === "cancelled") && (
                     <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">
                       Not Going
                     </Badge>
