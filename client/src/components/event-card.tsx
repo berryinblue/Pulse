@@ -30,7 +30,7 @@ interface EventCardProps {
   featured?: boolean;
 }
 
-export default function EventCard({ event, featured = false }: EventCardProps) {
+export default function EventCard({ event: initialEvent, featured = false }: EventCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -38,6 +38,14 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
   const { data: currentUser } = useQuery({
     queryKey: ['/api/me'],
   });
+
+  // Get the most up-to-date event data from the cache
+  const { data: events } = useQuery({
+    queryKey: ['/api/events'],
+  });
+  
+  // Find the current event in the events list, fallback to initial event
+  const event = events?.find((e: any) => e.id === initialEvent.id) || initialEvent;
 
   const rsvpMutation = useMutation({
     mutationFn: async (status: "yes" | "no") => {
