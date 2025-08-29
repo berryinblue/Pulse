@@ -51,6 +51,11 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
   
   // Use fresh data if available, fallback to initial event
   const event = freshEvent || initialEvent;
+  
+  // Calculate attendeeCount from attendees array if using fresh data
+  if (freshEvent && freshEvent.attendees) {
+    event.attendeeCount = freshEvent.attendees.length;
+  }
 
   const rsvpMutation = useMutation({
     mutationFn: async (status: "yes" | "no") => {
