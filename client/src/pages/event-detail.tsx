@@ -312,9 +312,6 @@ export default function EventDetail() {
                           <div className="text-sm font-medium" data-testid={`text-attendee-name-${attendee.id}`}>
                             {attendee.displayName}
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            @{attendee.domain}
-                          </div>
                         </div>
                       </div>
                     ))}
