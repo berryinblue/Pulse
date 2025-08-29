@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
 import { format } from "date-fns";
@@ -19,6 +19,7 @@ interface EventCardProps {
     startAt: string;
     endAt: string;
     capacity: number | null;
+    creatorUserId: string;
     creator: {
       displayName: string;
       avatarUrl: string | null;
@@ -32,6 +33,11 @@ interface EventCardProps {
 export default function EventCard({ event, featured = false }: EventCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Get current user to check if they created this event
+  const { data: currentUser } = useQuery({
+    queryKey: ['/api/me'],
+  });
 
   const rsvpMutation = useMutation({
     mutationFn: async (status: "yes" | "no") => {
@@ -62,8 +68,14 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
     }
   };
 
+  const isEventCreator = currentUser && event.creatorUserId === currentUser.id;
+  
   const getRsvpButtonText = () => {
     if (rsvpMutation.isPending) return "Updating...";
+    
+    if (isEventCreator) {
+      return "Cancel Event";
+    }
     
     switch (event.userRsvpStatus) {
       case "yes":
@@ -164,15 +176,17 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
               )}
             </div>
             
-            <Button
-              onClick={handleRsvp}
-              disabled={rsvpMutation.isPending}
-              variant={getRsvpButtonVariant() as any}
-              data-testid={`button-rsvp-${event.id}`}
-            >
-              <i className="fas fa-check mr-2"></i>
-              {getRsvpButtonText()}
-            </Button>
+            {!isEventCreator && (
+              <Button
+                onClick={handleRsvp}
+                disabled={rsvpMutation.isPending}
+                variant={getRsvpButtonVariant() as any}
+                data-testid={`button-rsvp-${event.id}`}
+              >
+                <i className="fas fa-check mr-2"></i>
+                {getRsvpButtonText()}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -241,16 +255,18 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
             )}
           </div>
           
-          <Button
-            size="sm"
-            onClick={handleRsvp}
-            disabled={rsvpMutation.isPending}
-            variant={getRsvpButtonVariant() as any}
-            className="text-sm px-3 py-1"
-            data-testid={`button-rsvp-${event.id}`}
-          >
-            {event.userRsvpStatus ? 'Joined' : 'Join'}
-          </Button>
+          {!isEventCreator && (
+            <Button
+              size="sm"
+              onClick={handleRsvp}
+              disabled={rsvpMutation.isPending}
+              variant={getRsvpButtonVariant() as any}
+              className="text-sm px-3 py-1"
+              data-testid={`button-rsvp-${event.id}`}
+            >
+              {getRsvpButtonText()}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
