@@ -162,6 +162,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: events.createdAt,
         updatedAt: events.updatedAt,
         statusEnum: events.statusEnum,
+        imageUrl: events.imageUrl,
         creator: {
           id: users.id,
           email: users.email,
@@ -221,6 +222,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: events.createdAt,
         updatedAt: events.updatedAt,
         statusEnum: events.statusEnum,
+        imageUrl: events.imageUrl,
         creator: {
           id: users.id,
           email: users.email,
