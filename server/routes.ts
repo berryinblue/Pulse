@@ -754,6 +754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       const { imageURL } = req.body;
+      console.log("Setting event image ACL for URL:", imageURL); // Debug log
 
       if (!imageURL) {
         return res.status(400).json({ error: "imageURL is required" });
@@ -767,6 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           visibility: "public", // Event images are public
         }
       );
+      console.log("Event image ACL set, returning objectPath:", objectPath); // Debug log
 
       res.status(200).json({ objectPath });
     } catch (error) {

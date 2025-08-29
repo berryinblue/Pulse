@@ -225,9 +225,11 @@ export default function CreateEvent() {
                         };
                       }}
                       onComplete={(result) => {
+                        console.log("Upload complete, result:", result); // Debug log
                         if (result.successful.length > 0) {
                           const uploadedFile = result.successful[0];
                           const imageUrl = uploadedFile.uploadURL;
+                          console.log("Upload successful, imageUrl:", imageUrl); // Debug log
                           if (imageUrl) {
                             // Set ACL policy for the uploaded image
                             fetch("/api/event-images", {
@@ -238,13 +240,15 @@ export default function CreateEvent() {
                             })
                             .then(res => res.json())
                             .then(data => {
+                              console.log("ACL response:", data); // Debug log
                               setEventImageUrl(data.objectPath);
                               toast({
                                 title: "Image uploaded!",
                                 description: "Your cover image looks great.",
                               });
                             })
-                            .catch(() => {
+                            .catch((error) => {
+                              console.error("ACL setting failed:", error); // Debug log
                               toast({
                                 title: "Upload failed",
                                 description: "Please try again.",
@@ -252,6 +256,8 @@ export default function CreateEvent() {
                               });
                             });
                           }
+                        } else {
+                          console.log("Upload failed, no successful files"); // Debug log
                         }
                       }}
                       buttonClassName="w-full h-48 border-2 border-dashed border-gray-300 hover:border-primary/50 hover:bg-gray-50 transition-colors rounded-lg"
