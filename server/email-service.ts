@@ -137,6 +137,40 @@ export class EmailService {
       html,
     });
   }
+
+  // Event update email for attendees
+  async sendEventUpdateEmail(
+    userEmail: string,
+    userName: string,
+    eventTitle: string,
+    eventDate: string,
+    eventLocation: string
+  ): Promise<boolean> {
+    const subject = `Event Updated: ${eventTitle}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #f59e0b; text-align: center;">📝 Event Updated</h1>
+        <p>Hi ${userName},</p>
+        <p>The event you're attending has been updated:</p>
+        
+        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h2 style="margin-top: 0; color: #1e293b;">${eventTitle}</h2>
+          <p><strong>📅 Date:</strong> ${eventDate}</p>
+          <p><strong>📍 Location:</strong> ${eventLocation}</p>
+        </div>
+        
+        <p>Please check the event page for the latest details. If you can no longer attend, please update your RSVP.</p>
+        
+        <p>Best regards,<br>The Pulse Team</p>
+      </div>
+    `;
+
+    return this.sendEmail({
+      to: userEmail,
+      subject,
+      html,
+    });
+  }
 }
 
 export const emailService = EmailService.getInstance();

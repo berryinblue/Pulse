@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useRoute } from "wouter";
 import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +17,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const availableTags = ["Social", "Career", "Fitness", "Learning", "Food"];
 
-const createEventSchema = z.object({
+const editEventSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title too long"),
   description: z.string().max(2000, "Description too long"),
   startAt: z.string().min(1, "Start date is required"),
@@ -39,21 +41,29 @@ const createEventSchema = z.object({
   }
 );
 
-type CreateEventForm = z.infer<typeof createEventSchema>;
+type EditEventForm = z.infer<typeof editEventSchema>;
 
-export default function CreateEvent() {
+export default function EditEvent() {
   const [, setLocation] = useLocation();
+  const [match, params] = useRoute("/events/:id/edit");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
 
+  const eventId = params?.id;
+
+  const { data: event, isLoading } = useQuery({
+    queryKey: ["/api/events", eventId],
+    enabled: !!eventId,
+  });
+
   const goBack = () => {
     window.history.back();
   };
 
-  const form = useForm<CreateEventForm>({
-    resolver: zodResolver(createEventSchema),
+  const form = useForm<EditEventForm>({
+    resolver: zodResolver(editEventSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -69,37 +79,60 @@ export default function CreateEvent() {
     },
   });
 
-  const createEventMutation = useMutation({
-    mutationFn: async (data: CreateEventForm) => {
-      // Keep dates as strings - backend will handle conversion
+  // Populate form when event data loads
+  useEffect(() => {
+    if (event) {
+      const startAtISO = new Date(event.startAt).toISOString().slice(0, 16);
+      const endAtISO = new Date(event.endAt).toISOString().slice(0, 16);
+      
+      form.setValue("title", event.title);
+      form.setValue("description", event.description || "");
+      form.setValue("startAt", startAtISO);
+      form.setValue("endAt", endAtISO);
+      form.setValue("locationText", event.locationText || "");
+      form.setValue("campus", event.campus || "");
+      form.setValue("capacity", event.capacity || undefined);
+      form.setValue("isVirtual", event.isVirtual);
+      form.setValue("visibilityEnum", event.visibilityEnum);
+      form.setValue("allowedDomains", event.allowedDomainsJson || []);
+      
+      const tags = event.tagsJson || [];
+      setSelectedTags(tags);
+      form.setValue("tags", tags);
+    }
+  }, [event, form]);
+
+  const updateEventMutation = useMutation({
+    mutationFn: async (data: EditEventForm) => {
       const eventData = {
         ...data,
         tags: selectedTags,
         capacity: data.capacity || undefined,
       };
-      const response = await apiRequest("POST", "/api/events", eventData);
+      const response = await apiRequest("PATCH", `/api/events/${eventId}`, eventData);
       return response.json();
     },
-    onSuccess: (event) => {
+    onSuccess: (updatedEvent) => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events", eventId] });
       queryClient.invalidateQueries({ queryKey: ["/api/events/created"] });
       toast({
-        title: "Event Created",
-        description: "Your event has been created successfully!",
+        title: "Event Updated",
+        description: "Your event has been updated successfully and attendees have been notified!",
       });
-      setLocation(`/events/${event.id}`);
+      setLocation(`/events/${updatedEvent.id}`);
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create event. Please try again.",
+        description: "Failed to update event. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const onSubmit = (data: CreateEventForm) => {
-    createEventMutation.mutate(data);
+  const onSubmit = (data: EditEventForm) => {
+    updateEventMutation.mutate(data);
   };
 
   const toggleTag = (tag: string) => {
@@ -122,6 +155,32 @@ export default function CreateEvent() {
     setSelectedTags(prev => prev.filter(tag => tag !== tagToRemove));
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Skeleton className="h-8 w-64 mb-4" />
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-2">Event not found</h1>
+            <p className="text-muted-foreground">This event may have been removed.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -140,7 +199,7 @@ export default function CreateEvent() {
         </div>
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Create New Event</CardTitle>
+            <CardTitle className="text-2xl">Edit Event</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -413,17 +472,17 @@ export default function CreateEvent() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setLocation("/")}
+                      onClick={() => setLocation(`/events/${eventId}`)}
                       data-testid="button-cancel"
                     >
                       Cancel
                     </Button>
                     <Button
                       type="submit"
-                      disabled={createEventMutation.isPending}
-                      data-testid="button-create"
+                      disabled={updateEventMutation.isPending}
+                      data-testid="button-update"
                     >
-                      {createEventMutation.isPending ? "Creating..." : "Create Event"}
+                      {updateEventMutation.isPending ? "Updating..." : "Update Event"}
                     </Button>
                   </div>
                 </div>

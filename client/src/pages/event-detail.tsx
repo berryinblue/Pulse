@@ -290,14 +290,25 @@ export default function EventDetail() {
                   <i className="fas fa-calendar-plus mr-2"></i>
                   Add to Calendar
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  data-testid="button-report"
-                >
-                  <i className="fas fa-flag mr-2"></i>
-                  Report Event
-                </Button>
+                {isEventCreator ? (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => window.location.href = `/events/${id}/edit`}
+                    data-testid="button-edit-event"
+                  >
+                    <i className="fas fa-edit mr-2"></i>
+                    Edit Event
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    data-testid="button-report"
+                  >
+                    <i className="fas fa-flag mr-2"></i>
+                    Report Event
+                  </Button>
+                )}
               </div>
               {!isEventCreator && (
                 <Button

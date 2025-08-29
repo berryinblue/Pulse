@@ -7,6 +7,7 @@ import { useAuth } from "./lib/auth";
 import GoogleAuth from "./components/auth/google-auth";
 import Home from "./pages/home";
 import CreateEvent from "./pages/create-event";
+import EditEvent from "./pages/edit-event";
 import EventDetail from "./pages/event-detail";
 import AdminStats from "./pages/admin-stats";
 import Profile from "./pages/profile";
@@ -35,6 +36,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/create" component={CreateEvent} />
+      <Route path="/events/:id/edit" component={EditEvent} />
       <Route path="/events/:id" component={EventDetail} />
       <Route path="/admin/stats" component={AdminStats} />
       <Route path="/profile" component={Profile} />

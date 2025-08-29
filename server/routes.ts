@@ -489,6 +489,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update event route
+  app.patch("/api/events/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const eventId = req.params.id;
+      
+      // Check if user is the event creator
+      const existingEvent = await storage.getEvent(eventId);
+      if (!existingEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (existingEvent.creatorUserId !== user.id) {
+        return res.status(403).json({ message: "Only event creator can edit this event" });
+      }
+      
+      // Parse and validate the update data (excluding creatorUserId and companyId)
+      const updateData = insertEventSchema.omit({ creatorUserId: true, companyId: true }).parse(req.body);
+      
+      const updatedEvent = await storage.updateEvent(eventId, updateData);
+      
+      // Get all attendees for notification emails
+      const attendees = await storage.getEventAttendees(eventId);
+      
+      // Send update notifications to all attendees
+      for (const attendee of attendees) {
+        try {
+          const eventDate = updatedEvent.startAt.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          });
+          const eventLocation = updatedEvent.isVirtual ? 'Virtual Event' : (updatedEvent.locationText || 'Location TBD');
+          
+          emailService.sendEventUpdateEmail(
+            attendee.email,
+            attendee.displayName || attendee.email.split("@")[0],
+            updatedEvent.title,
+            eventDate,
+            eventLocation
+          );
+        } catch (emailError) {
+          console.error(`Failed to send update email to ${attendee.email}:`, emailError);
+        }
+      }
+      
+      // Track event update
+      await storage.createAnalyticsEvent({
+        userId: user.id,
+        sessionId: req.sessionID,
+        eventName: "event_updated",
+        propsJson: { eventId: updatedEvent.id },
+      });
+
+      res.json(updatedEvent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid event data", errors: error.errors });
+      }
+      console.error("Event update error:", error);
+      res.status(500).json({ message: "Failed to update event" });
+    }
+  });
+
   // Upload routes
   app.post("/api/upload/avatar", requireAuth, async (req, res) => {
     try {

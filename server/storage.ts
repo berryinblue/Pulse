@@ -40,6 +40,8 @@ export interface IStorage {
     userRsvpStatus: string | null;
   }) | undefined>;
   createEvent(event: InsertEvent): Promise<Event>;
+  updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event>;
+  getEventAttendees(eventId: string): Promise<User[]>;
   getUserEvents(userId: string): Promise<any[]>;
   getEventsByCreator(userId: string): Promise<(Event & { creator: User; rsvpCount: number })[]>;
   getEventsByRsvp(userId: string): Promise<(Event & { creator: User; userRsvpStatus: string })[]>;
@@ -267,6 +269,45 @@ export class DatabaseStorage implements IStorage {
       allowedDomainsJson: allowedDomains || [],
     }).returning();
     return result[0];
+  }
+
+  async updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event> {
+    const { tags, allowedDomains, ...eventData } = event;
+    const updateData: any = { ...eventData };
+    
+    if (tags !== undefined) {
+      updateData.tagsJson = tags;
+    }
+    if (allowedDomains !== undefined) {
+      updateData.allowedDomainsJson = allowedDomains;
+    }
+    
+    const result = await db
+      .update(events)
+      .set(updateData)
+      .where(eq(events.id, id))
+      .returning();
+    
+    return result[0];
+  }
+
+  async getEventAttendees(eventId: string): Promise<User[]> {
+    const result = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        domain: users.domain,
+        displayName: users.displayName,
+        avatarUrl: users.avatarUrl,
+        verifiedAt: users.verifiedAt,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(eventRsvps)
+      .innerJoin(users, eq(eventRsvps.userId, users.id))
+      .where(and(eq(eventRsvps.eventId, eventId), eq(eventRsvps.statusEnum, "yes")));
+    
+    return result;
   }
 
   async getUserEvents(userId: string): Promise<any[]> {

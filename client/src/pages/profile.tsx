@@ -20,6 +20,10 @@ export default function Profile() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  const goBack = () => {
+    window.history.back();
+  };
+
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ["/api/me"],
   });
@@ -178,6 +182,17 @@ export default function Profile() {
       <Header />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={goBack}
+            className="flex items-center space-x-2"
+            data-testid="button-go-back"
+          >
+            <i className="fas fa-arrow-left"></i>
+            <span>Back</span>
+          </Button>
+        </div>
         {/* Profile Header */}
         <Card className="mb-8">
           <CardHeader>
