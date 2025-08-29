@@ -39,13 +39,18 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
     queryKey: ['/api/me'],
   });
 
-  // Get the most up-to-date event data from the cache
-  const { data: events } = useQuery({
-    queryKey: ['/api/events'],
+  // Get the most up-to-date event data directly from the individual event endpoint
+  const { data: freshEvent } = useQuery({
+    queryKey: ["/api/events", initialEvent.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/events/${initialEvent.id}`, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch event");
+      return response.json();
+    },
   });
   
-  // Find the current event in the events list, fallback to initial event
-  const event = events?.find((e: any) => e.id === initialEvent.id) || initialEvent;
+  // Use fresh data if available, fallback to initial event
+  const event = freshEvent || initialEvent;
 
   const rsvpMutation = useMutation({
     mutationFn: async (status: "yes" | "no") => {
