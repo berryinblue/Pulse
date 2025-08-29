@@ -77,6 +77,7 @@ export default function CreateEvent() {
     },
     onSuccess: (event) => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events/created"] });
       toast({
         title: "Event Created",
         description: "Your event has been created successfully!",

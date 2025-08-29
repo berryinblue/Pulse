@@ -1,4 +1,4 @@
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
 
 export default function EventDetail() {
   const { id } = useParams();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: currentUser } = useAuth();
+
+  const goBack = () => {
+    setLocation("/");
+  };
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["/api/events", id],
@@ -33,6 +40,8 @@ export default function EventDetail() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/events", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events/created"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events/rsvped"] });
       toast({
         title: "RSVP Updated",
         description: data.message,
@@ -47,27 +56,27 @@ export default function EventDetail() {
     },
   });
 
-  const downloadICS = async () => {
+  const addToCalendar = () => {
     try {
-      const response = await fetch(`/api/events/${id}/ics`, { credentials: "include" });
-      if (!response.ok) throw new Error("Failed to download calendar file");
+      const startDate = new Date(event.startAt);
+      const endDate = new Date(event.endAt);
       
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${event.title}.ics`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const formatDate = (date: Date) => {
+        return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      };
+      
+      const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${formatDate(startDate)}/${formatDate(endDate)}&details=${encodeURIComponent(event.description || '')}&location=${encodeURIComponent(event.locationText || (event.isVirtual ? 'Virtual Event' : ''))}`;
+      
+      window.open(calendarUrl, '_blank');
       
       toast({
-        title: "Calendar Downloaded",
-        description: "Event has been added to your calendar file.",
+        title: "Calendar Opened",
+        description: "Google Calendar opened to add this event.",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to download calendar file.",
+        description: "Failed to open calendar.",
         variant: "destructive",
       });
     }
@@ -132,11 +141,25 @@ export default function EventDetail() {
       : "default";
   };
 
+  const isEventCreator = currentUser && event && currentUser.id === event.creatorUserId;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={goBack}
+            className="flex items-center space-x-2"
+            data-testid="button-go-back"
+          >
+            <i className="fas fa-arrow-left"></i>
+            <span>Back to Events</span>
+          </Button>
+        </div>
+        
         <Card>
           <CardHeader>
             <div className="flex items-start justify-between">
@@ -261,10 +284,10 @@ export default function EventDetail() {
               <div className="flex items-center space-x-4">
                 <Button 
                   variant="outline" 
-                  onClick={downloadICS}
-                  data-testid="button-download-ics"
+                  onClick={addToCalendar}
+                  data-testid="button-add-calendar"
                 >
-                  <i className="fas fa-download mr-2"></i>
+                  <i className="fas fa-calendar-plus mr-2"></i>
                   Add to Calendar
                 </Button>
                 <Button 
@@ -276,16 +299,18 @@ export default function EventDetail() {
                   Report Event
                 </Button>
               </div>
-              <Button
-                onClick={handleRsvp}
-                disabled={rsvpMutation.isPending}
-                variant={getRsvpButtonVariant() as any}
-                size="lg"
-                data-testid="button-rsvp-main"
-              >
-                <i className="fas fa-check mr-2"></i>
-                {getRsvpButtonText()}
-              </Button>
+              {!isEventCreator && (
+                <Button
+                  onClick={handleRsvp}
+                  disabled={rsvpMutation.isPending}
+                  variant={getRsvpButtonVariant() as any}
+                  size="lg"
+                  data-testid="button-rsvp-main"
+                >
+                  <i className="fas fa-check mr-2"></i>
+                  {getRsvpButtonText()}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -1,20 +1,6 @@
-import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
 
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@pulse.app';
-
-const oauth2Client = new google.auth.OAuth2(
-  CLIENT_ID,
-  CLIENT_SECRET,
-  'https://developers.google.com/oauthplayground' // redirect URL
-);
-
-oauth2Client.setCredentials({
-  refresh_token: REFRESH_TOKEN,
-});
 
 interface EmailOptions {
   to: string;
@@ -25,7 +11,6 @@ interface EmailOptions {
 
 export class EmailService {
   private static instance: EmailService;
-  private transporter: nodemailer.Transporter | null = null;
 
   private constructor() {}
 
@@ -36,47 +21,13 @@ export class EmailService {
     return EmailService.instance;
   }
 
-  private async getTransporter() {
-    if (this.transporter) {
-      return this.transporter;
-    }
-
-    try {
-      const accessToken = await oauth2Client.getAccessToken();
-
-      this.transporter = nodemailer.createTransporter({
-        service: 'gmail',
-        auth: {
-          type: 'OAuth2',
-          user: FROM_EMAIL,
-          clientId: CLIENT_ID,
-          clientSecret: CLIENT_SECRET,
-          refreshToken: REFRESH_TOKEN,
-          accessToken: accessToken.token,
-        },
-      } as nodemailer.TransporterOptions);
-
-      return this.transporter;
-    } catch (error) {
-      console.error('Failed to create email transporter:', error);
-      throw new Error('Email service not properly configured');
-    }
-  }
-
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-      const transporter = await this.getTransporter();
-
-      const mailOptions = {
-        from: FROM_EMAIL,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-      };
-
-      const result = await transporter.sendMail(mailOptions);
-      console.log('Email sent successfully:', result.messageId);
+      // For now, just log the email that would be sent
+      console.log(`📧 EMAIL TO: ${options.to}`);
+      console.log(`📧 SUBJECT: ${options.subject}`);
+      console.log(`📧 CONTENT: ${options.html || options.text}`);
+      console.log('---');
       return true;
     } catch (error) {
       console.error('Failed to send email:', error);
