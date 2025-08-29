@@ -197,26 +197,49 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {/* Host profile picture - always visible */}
-              <div className="flex items-center space-x-2">
-                <Avatar className="w-7 h-7 border-2 border-background">
-                  <AvatarImage src={event.creator.avatarUrl || undefined} />
-                  <AvatarFallback className="text-xs">
-                    {event.creator.displayName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="text-sm text-muted-foreground">
-                  <div className="font-medium">Host: {event.creator.displayName}</div>
-                </div>
-              </div>
-              
-              {/* Attendee count */}
-              <div className="flex items-center">
-                <span className="text-sm text-muted-foreground" data-testid={`text-attendee-count-${event.id}`}>
-                  {event.attendeeCount} going
-                </span>
+          <div className="space-y-3">
+            {/* Host section */}
+            <div className="flex items-center space-x-2">
+              <Avatar className="w-6 h-6 border-2 border-background">
+                <AvatarImage src={event.creator.avatarUrl || undefined} />
+                <AvatarFallback className="text-xs">
+                  {event.creator.displayName.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-muted-foreground font-medium">
+                Host: {event.creator.displayName}
+              </span>
+            </div>
+            
+            {/* Attendees section */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {event.attendeeCount > 0 ? (
+                  <>
+                    <div className="flex -space-x-2">
+                      {(freshEvent?.attendees || []).slice(0, 4).map((attendee: any, index: number) => (
+                        <Avatar key={attendee.id} className="w-6 h-6 border-2 border-background" style={{ zIndex: 10 - index }}>
+                          <AvatarImage src={attendee.avatarUrl || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {attendee.displayName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                      {event.attendeeCount > 4 && (
+                        <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
+                          +{event.attendeeCount - 4}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-sm text-muted-foreground" data-testid={`text-attendee-count-${event.id}`}>
+                      {event.attendeeCount} going
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {isAtCapacity ? 'Full' : 'Be the first to join'}
+                  </span>
+                )}
               </div>
               {spotsLeft !== null && (
                 <span className="text-sm text-muted-foreground" data-testid={`text-spots-left-${event.id}`}>
@@ -224,7 +247,6 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
                 </span>
               )}
             </div>
-            
           </div>
         </CardContent>
         </Card>
@@ -275,29 +297,46 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
           </div>
         </div>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {/* Host profile picture - always visible */}
+        <div className="space-y-2">
+          {/* Host section */}
+          <div className="flex items-center space-x-2">
+            <Avatar className="w-5 h-5 border border-background">
+              <AvatarImage src={event.creator.avatarUrl || undefined} />
+              <AvatarFallback className="text-xs">
+                {event.creator.displayName.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-muted-foreground font-medium">
+              Host: {event.creator.displayName}
+            </span>
+          </div>
+          
+          {/* Attendees section */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Avatar className="w-6 h-6 border border-background">
-                <AvatarImage src={event.creator.avatarUrl || undefined} />
-                <AvatarFallback className="text-xs">
-                  {event.creator.displayName.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-xs text-muted-foreground">
-                <div className="font-medium">Host: {event.creator.displayName}</div>
-              </div>
-            </div>
-            
-            {/* Attendee count */}
-            <div className="text-xs text-muted-foreground">
               {event.attendeeCount > 0 ? (
-                <span data-testid={`text-attendee-count-${event.id}`}>
-                  {event.attendeeCount} going
-                </span>
+                <>
+                  <div className="flex -space-x-1">
+                    {(freshEvent?.attendees || []).slice(0, 3).map((attendee: any, index: number) => (
+                      <Avatar key={attendee.id} className="w-5 h-5 border border-background" style={{ zIndex: 10 - index }}>
+                        <AvatarImage src={attendee.avatarUrl || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {attendee.displayName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {event.attendeeCount > 3 && (
+                      <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center text-xs font-medium">
+                        +{event.attendeeCount - 3}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground" data-testid={`text-attendee-count-${event.id}`}>
+                    {event.attendeeCount} going
+                  </span>
+                </>
               ) : (
-                <span>
+                <span className="text-xs text-muted-foreground">
                   {isAtCapacity ? 'Full' : 'Be the first to join'}
                 </span>
               )}
