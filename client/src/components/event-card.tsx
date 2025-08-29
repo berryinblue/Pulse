@@ -145,7 +145,6 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
             <div>
               <div className="flex items-center space-x-2 mb-2">
                 <Badge variant="default">Featured</Badge>
-                {isEventCreator && <Badge variant="outline">Host</Badge>}
                 {tags.map((tag) => (
                   <Badge key={tag} variant="secondary">{tag}</Badge>
                 ))}
@@ -212,28 +211,6 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
               )}
             </div>
             
-            {!isEventCreator && (
-              event.userRsvpStatus === "yes" ? (
-                <Button
-                  disabled
-                  variant="default"
-                  data-testid={`button-going-${event.id}`}
-                >
-                  <i className="fas fa-check mr-2"></i>
-                  Going
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleRsvp}
-                  disabled={rsvpMutation.isPending}
-                  variant={getRsvpButtonVariant() as any}
-                  data-testid={`button-rsvp-${event.id}`}
-                >
-                  <i className="fas fa-check mr-2"></i>
-                  {getRsvpButtonText()}
-                </Button>
-              )
-            )}
           </div>
         </CardContent>
       </Card>
@@ -246,7 +223,6 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
       <div className="h-32 bg-gradient-to-r from-primary/20 to-accent/20"></div>
       <CardContent className="p-4">
         <div className="flex items-center space-x-2 mb-2">
-          {isEventCreator && <Badge variant="outline" className="text-xs">Host</Badge>}
           {tags.map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">
               {tag}
@@ -309,31 +285,6 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
             )}
           </div>
           
-          {!isEventCreator && (
-            event.userRsvpStatus === "yes" ? (
-              <Button
-                size="sm"
-                disabled
-                variant="default"
-                className="text-sm px-3 py-1"
-                data-testid={`button-going-${event.id}`}
-              >
-                <i className="fas fa-check mr-1"></i>
-                Going
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                onClick={handleRsvp}
-                disabled={rsvpMutation.isPending}
-                variant={getRsvpButtonVariant() as any}
-                className="text-sm px-3 py-1"
-                data-testid={`button-rsvp-${event.id}`}
-              >
-                {getRsvpButtonText()}
-              </Button>
-            )
-          )}
         </div>
       </CardContent>
     </Card>
