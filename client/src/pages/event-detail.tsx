@@ -18,7 +18,7 @@ export default function EventDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const goBack = () => {
