@@ -213,14 +213,9 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
                   {event.creator.displayName.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <span className="text-sm text-muted-foreground font-medium">
-                  Host: {event.creator.displayName}
-                </span>
-                <div className="text-xs text-muted-foreground">
-                  @{event.creator.domain}
-                </div>
-              </div>
+              <span className="text-sm text-muted-foreground font-medium">
+                Host: {event.creator.displayName}
+              </span>
             </div>
             
             {/* Attendees section */}
@@ -322,14 +317,9 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
                 {event.creator.displayName.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <span className="text-xs text-muted-foreground font-medium">
-                Host: {event.creator.displayName}
-              </span>
-              <div className="text-xs text-muted-foreground">
-                @{event.creator.domain}
-              </div>
-            </div>
+            <span className="text-xs text-muted-foreground font-medium">
+              Host: {event.creator.displayName}
+            </span>
           </div>
           
           {/* Attendees section */}

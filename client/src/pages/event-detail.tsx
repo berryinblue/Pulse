@@ -277,9 +277,6 @@ export default function EventDetail() {
                       <div className="text-sm text-muted-foreground" data-testid="text-event-creator">
                         {event.creator.displayName}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        @{event.creator.domain}
-                      </div>
                     </div>
                   </div>
 
