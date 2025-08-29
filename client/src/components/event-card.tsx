@@ -183,7 +183,11 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
             <div className="flex items-center">
               <i className="fas fa-calendar-alt mr-2"></i>
               <span data-testid={`text-event-date-${event.id}`}>
-                {format(startDate, 'EEE, MMM d')}
+                {startDate.toDateString() === endDate.toDateString() ? (
+                  format(startDate, 'EEE, MMM d')
+                ) : (
+                  `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d')}`
+                )}
               </span>
             </div>
             <div className="flex items-center">
@@ -283,7 +287,11 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
           <div className="flex items-center">
             <i className="fas fa-calendar-alt mr-2 w-3"></i>
             <span data-testid={`text-event-date-${event.id}`}>
-              {format(startDate, 'EEE, MMM d')}
+              {startDate.toDateString() === endDate.toDateString() ? (
+                format(startDate, 'EEE, MMM d')
+              ) : (
+                `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d')}`
+              )}
             </span>
           </div>
           <div className="flex items-center">
