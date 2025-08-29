@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { ReactNode } from "react";
 import Uppy from "@uppy/core";
-import { DashboardModal } from "@uppy/react";
 import AwsS3 from "@uppy/aws-s3";
 import type { UploadResult } from "@uppy/core";
-import { Button } from "@/components/ui/button";
 
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
@@ -20,34 +18,6 @@ interface ObjectUploaderProps {
   children: ReactNode;
 }
 
-/**
- * A file upload component that renders as a button and provides a modal interface for
- * file management.
- * 
- * Features:
- * - Renders as a customizable button that opens a file upload modal
- * - Provides a modal interface for:
- *   - File selection
- *   - File preview
- *   - Upload progress tracking
- *   - Upload status display
- * 
- * The component uses Uppy under the hood to handle all file upload functionality.
- * All file management features are automatically handled by the Uppy dashboard modal.
- * 
- * @param props - Component props
- * @param props.maxNumberOfFiles - Maximum number of files allowed to be uploaded
- *   (default: 1)
- * @param props.maxFileSize - Maximum file size in bytes (default: 10MB)
- * @param props.onGetUploadParameters - Function to get upload parameters (method and URL).
- *   Typically used to fetch a presigned URL from the backend server for direct-to-S3
- *   uploads.
- * @param props.onComplete - Callback function called when upload is complete. Typically
- *   used to make post-upload API calls to update server state and set object ACL
- *   policies.
- * @param props.buttonClassName - Optional CSS class name for the button
- * @param props.children - Content to be rendered inside the button
- */
 export function ObjectUploader({
   maxNumberOfFiles = 1,
   maxFileSize = 10485760, // 10MB default
@@ -56,13 +26,15 @@ export function ObjectUploader({
   buttonClassName,
   children,
 }: ObjectUploaderProps) {
-  const [showModal, setShowModal] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uppy] = useState(() =>
     new Uppy({
       restrictions: {
         maxNumberOfFiles,
         maxFileSize,
-        allowedFileTypes: ['image/*'], // Only allow images for events
+        allowedFileTypes: ['image/*'],
       },
       autoProceed: true,
     })
@@ -70,33 +42,105 @@ export function ObjectUploader({
         shouldUseMultipart: false,
         getUploadParameters: onGetUploadParameters,
       })
+      .on("upload", () => {
+        setIsUploading(true);
+      })
       .on("complete", (result) => {
+        setIsUploading(false);
         onComplete?.(result);
       })
+      .on("error", () => {
+        setIsUploading(false);
+      })
   );
+
+  const handleFiles = (files: FileList) => {
+    Array.from(files).forEach(file => {
+      uppy.addFile({
+        name: file.name,
+        type: file.type,
+        data: file,
+      });
+    });
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set dragOver to false if we're leaving the main container
+    if (e.currentTarget === e.target) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(e.target.files);
+    }
+  };
 
   return (
     <div>
       <div 
-        onClick={() => setShowModal(true)} 
-        className={`cursor-pointer ${buttonClassName || ''}`}
+        onClick={handleClick}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        className={`cursor-pointer transition-colors ${
+          isDragOver ? 'border-primary bg-primary/5' : ''
+        } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''} ${buttonClassName || ''}`}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            console.log("Upload button keyboard activated, opening modal"); // Debug log
-            setShowModal(true);
+            e.preventDefault();
+            handleClick();
           }
         }}
       >
-        {children}
+        {isUploading ? (
+          <div className="flex flex-col items-center justify-center gap-3 h-full">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="font-medium text-gray-900">Uploading...</p>
+          </div>
+        ) : (
+          children
+        )}
       </div>
 
-      <DashboardModal
-        uppy={uppy}
-        open={showModal}
-        onRequestClose={() => setShowModal(false)}
-        proudlyDisplayPoweredByUppy={false}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple={maxNumberOfFiles > 1}
+        onChange={handleFileInputChange}
+        className="hidden"
       />
     </div>
   );
