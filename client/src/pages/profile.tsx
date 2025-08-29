@@ -38,7 +38,26 @@ export default function Profile() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate user profile cache
       queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+      
+      // Invalidate all event-related caches so updated name/avatar shows everywhere
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events/created"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events/rsvped"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/events"] });
+      
+      // Invalidate individual event caches (they contain creator and attendee info)
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return Array.isArray(queryKey) && 
+                 queryKey.length === 2 && 
+                 queryKey[0] === "/api/events" && 
+                 typeof queryKey[1] === "string";
+        }
+      });
+      
       toast({
         title: "Profile Updated",
         description: "Your profile has been updated successfully!",
