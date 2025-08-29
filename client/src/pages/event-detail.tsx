@@ -245,14 +245,14 @@ export default function EventDetail() {
                         {startDate.toDateString() === endDate.toDateString() ? (
                           format(startDate, 'EEEE, MMMM d, yyyy')
                         ) : (
-                          `${format(startDate, 'EEEE, MMMM d, yyyy')} - ${format(endDate, 'EEEE, MMMM d, yyyy')}`
+                          `${format(startDate, 'EEE, MM/dd')} - ${format(endDate, 'EEE, MM/dd, yyyy')}`
                         )}
                       </div>
                       <div className="text-sm text-muted-foreground" data-testid="text-event-time">
                         {startDate.toDateString() === endDate.toDateString() ? (
                           `${format(startDate, 'h:mm a')} - ${format(endDate, 'h:mm a')}`
                         ) : (
-                          `${format(startDate, 'MMMM d, h:mm a')} - ${format(endDate, 'MMMM d, h:mm a')}`
+                          `${format(startDate, 'h:mm a')} - ${format(endDate, 'h:mm a')}`
                         )}
                       </div>
                     </div>
