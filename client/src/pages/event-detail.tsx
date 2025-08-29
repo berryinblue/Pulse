@@ -193,17 +193,22 @@ export default function EventDetail() {
                   {tags.map((tag: string) => (
                     <Badge key={tag} variant="secondary">{tag}</Badge>
                   ))}
-                  {event.userRsvpStatus === "yes" && (
+                  {isEventCreator && (
+                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                      Hosting
+                    </Badge>
+                  )}
+                  {!isEventCreator && event.userRsvpStatus === "yes" && (
                     <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
                       Going
                     </Badge>
                   )}
-                  {event.userRsvpStatus === "waitlist" && (
+                  {!isEventCreator && event.userRsvpStatus === "waitlist" && (
                     <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
                       Waitlisted
                     </Badge>
                   )}
-                  {(event.userRsvpStatus === "no" || event.userRsvpStatus === "cancelled") && (
+                  {!isEventCreator && (event.userRsvpStatus === "no" || event.userRsvpStatus === "cancelled") && (
                     <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">
                       Not Going
                     </Badge>
