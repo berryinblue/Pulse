@@ -44,19 +44,46 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
       const response = await apiRequest("POST", `/api/events/${event.id}/rsvp`, { status });
       return response.json();
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
-      toast({
-        title: "RSVP Updated",
-        description: data.message,
+    onMutate: async (status) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/events"] });
+      
+      // Snapshot the previous value
+      const previousEvents = queryClient.getQueryData(["/api/events"]);
+      
+      // Optimistically update the event list
+      queryClient.setQueryData(["/api/events"], (old: any) => {
+        if (!old) return old;
+        return old.map((e: any) => 
+          e.id === event.id 
+            ? { ...e, userRsvpStatus: status }
+            : e
+        );
       });
+      
+      // Return a context object with the snapshotted value
+      return { previousEvents };
     },
-    onError: () => {
+    onError: (err, status, context) => {
+      // If the mutation fails, use the context to roll back
+      if (context?.previousEvents) {
+        queryClient.setQueryData(["/api/events"], context.previousEvents);
+      }
       toast({
         title: "Error",
         description: "Failed to update RSVP. Please try again.",
         variant: "destructive",
       });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "RSVP Updated",
+        description: data.message,
+      });
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
     },
   });
 
