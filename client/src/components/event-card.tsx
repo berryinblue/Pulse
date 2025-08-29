@@ -83,7 +83,7 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
       case "waitlist":
         return "Leave Waitlist";
       default:
-        return event.capacity && event.attendeeCount >= event.capacity ? "Join Waitlist" : "RSVP";
+        return event.capacity && event.attendeeCount >= event.capacity ? "Join Waitlist" : "Join";
     }
   };
 
@@ -179,15 +179,22 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
             </div>
             
             {!isEventCreator && (
-              <Button
-                onClick={handleRsvp}
-                disabled={rsvpMutation.isPending}
-                variant={getRsvpButtonVariant() as any}
-                data-testid={`button-rsvp-${event.id}`}
-              >
-                <i className="fas fa-check mr-2"></i>
-                {getRsvpButtonText()}
-              </Button>
+              event.userRsvpStatus === "yes" ? (
+                <Badge variant="default" className="text-sm px-3 py-1">
+                  <i className="fas fa-check mr-2"></i>
+                  Going
+                </Badge>
+              ) : (
+                <Button
+                  onClick={handleRsvp}
+                  disabled={rsvpMutation.isPending}
+                  variant={getRsvpButtonVariant() as any}
+                  data-testid={`button-rsvp-${event.id}`}
+                >
+                  <i className="fas fa-check mr-2"></i>
+                  {getRsvpButtonText()}
+                </Button>
+              )
             )}
           </div>
         </CardContent>
@@ -266,16 +273,23 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
           </div>
           
           {!isEventCreator && (
-            <Button
-              size="sm"
-              onClick={handleRsvp}
-              disabled={rsvpMutation.isPending}
-              variant={getRsvpButtonVariant() as any}
-              className="text-sm px-3 py-1"
-              data-testid={`button-rsvp-${event.id}`}
-            >
-              {getRsvpButtonText()}
-            </Button>
+            event.userRsvpStatus === "yes" ? (
+              <Badge variant="default" className="text-xs px-2 py-1">
+                <i className="fas fa-check mr-1"></i>
+                Going
+              </Badge>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleRsvp}
+                disabled={rsvpMutation.isPending}
+                variant={getRsvpButtonVariant() as any}
+                className="text-sm px-3 py-1"
+                data-testid={`button-rsvp-${event.id}`}
+              >
+                {getRsvpButtonText()}
+              </Button>
+            )
           )}
         </div>
       </CardContent>
