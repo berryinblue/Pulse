@@ -21,6 +21,7 @@ interface Event {
   capacity: number | null;
   statusEnum: string;
   tagsJson: string[];
+  imageUrl: string | null;
   creator: {
     displayName: string;
     avatarUrl: string | null;
@@ -64,7 +65,18 @@ function EventCard({ event, showStatus = false, showRsvpStatus = false }: EventC
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+      {event.imageUrl ? (
+        <div className="h-32 w-full overflow-hidden">
+          <img 
+            src={event.imageUrl} 
+            alt={event.title}
+            className="h-full w-full object-cover transition-transform hover:scale-105"
+          />
+        </div>
+      ) : (
+        <div className="h-32 bg-gradient-to-r from-primary/20 to-accent/20"></div>
+      )}
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
@@ -79,12 +91,12 @@ function EventCard({ event, showStatus = false, showRsvpStatus = false }: EventC
           </div>
           <div className="flex flex-col items-end space-y-2">
             {showStatus && (
-              <Badge className={getStatusColor(event.statusEnum)} data-testid={`badge-status-${event.id}`}>
+              <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs" data-testid={`badge-status-${event.id}`}>
                 {event.statusEnum === "active" ? "Hosting" : event.statusEnum}
               </Badge>
             )}
             {showRsvpStatus && event.userRsvpStatus && (
-              <Badge className={getRsvpStatusColor(event.userRsvpStatus)} data-testid={`badge-rsvp-${event.id}`}>
+              <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs" data-testid={`badge-rsvp-${event.id}`}>
                 {event.userRsvpStatus === "yes" ? "Going" : event.userRsvpStatus}
               </Badge>
             )}
