@@ -64,7 +64,7 @@ export function ObjectUploader({
         maxFileSize,
         allowedFileTypes: ['image/*'], // Only allow images for events
       },
-      autoProceed: false,
+      autoProceed: true,
     })
       .use(AwsS3, {
         shouldUseMultipart: false,
