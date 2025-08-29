@@ -80,12 +80,12 @@ function EventCard({ event, showStatus = false, showRsvpStatus = false }: EventC
           <div className="flex flex-col items-end space-y-2">
             {showStatus && (
               <Badge className={getStatusColor(event.statusEnum)} data-testid={`badge-status-${event.id}`}>
-                {event.statusEnum}
+                {event.statusEnum === "active" ? "Hosting" : event.statusEnum}
               </Badge>
             )}
             {showRsvpStatus && event.userRsvpStatus && (
               <Badge className={getRsvpStatusColor(event.userRsvpStatus)} data-testid={`badge-rsvp-${event.id}`}>
-                {event.userRsvpStatus === "yes" ? "Attending" : event.userRsvpStatus}
+                {event.userRsvpStatus === "yes" ? "Going" : event.userRsvpStatus}
               </Badge>
             )}
           </div>
