@@ -102,6 +102,9 @@ export default function EditEvent() {
       const tags = event.tagsJson || [];
       setSelectedTags(tags);
       form.setValue("tags", tags);
+      
+      // Set existing image URL
+      setEventImageUrl(event.imageUrl || null);
     }
   }, [event, form]);
 
@@ -111,6 +114,7 @@ export default function EditEvent() {
         ...data,
         tags: selectedTags,
         capacity: data.capacity || undefined,
+        imageUrl: eventImageUrl,
       };
       const response = await apiRequest("PATCH", `/api/events/${eventId}`, eventData);
       return response.json();
@@ -243,6 +247,89 @@ export default function EditEvent() {
                     </FormItem>
                   )}
                 />
+
+                {/* Event Image Upload */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Event Cover Image</Label>
+                  {eventImageUrl ? (
+                    <div className="relative group">
+                      <img 
+                        src={eventImageUrl} 
+                        alt="Event cover" 
+                        className="w-full h-48 object-cover rounded-lg border shadow-sm"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setEventImageUrl(null)}
+                          className="bg-white text-black hover:bg-gray-100"
+                        >
+                          <i className="fas fa-trash mr-2"></i>
+                          Remove Image
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <ObjectUploader
+                      maxNumberOfFiles={1}
+                      maxFileSize={5242880} // 5MB limit for event images
+                      onGetUploadParameters={async () => {
+                        const response = await fetch("/api/objects/upload", {
+                          method: "POST",
+                          credentials: "include",
+                        });
+                        const data = await response.json();
+                        return {
+                          method: "PUT" as const,
+                          url: data.uploadURL,
+                        };
+                      }}
+                      onComplete={(result) => {
+                        if (result.successful.length > 0) {
+                          const uploadedFile = result.successful[0];
+                          const imageUrl = uploadedFile.uploadURL;
+                          if (imageUrl) {
+                            // Set ACL policy for the uploaded image
+                            fetch("/api/event-images", {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              credentials: "include",
+                              body: JSON.stringify({ imageURL: imageUrl }),
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                              setEventImageUrl(data.objectPath);
+                              toast({
+                                title: "Image uploaded!",
+                                description: "Your cover image looks great.",
+                              });
+                            })
+                            .catch(() => {
+                              toast({
+                                title: "Upload failed",
+                                description: "Please try again.",
+                                variant: "destructive",
+                              });
+                            });
+                          }
+                        }
+                      }}
+                      buttonClassName="w-full h-48 border-2 border-dashed border-gray-300 hover:border-primary/50 hover:bg-gray-50 transition-colors rounded-lg"
+                    >
+                      <div className="flex flex-col items-center justify-center gap-3 h-full">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <i className="fas fa-image text-xl text-primary"></i>
+                        </div>
+                        <div className="text-center">
+                          <p className="font-medium text-gray-900">Add a cover image</p>
+                          <p className="text-sm text-gray-500 mt-1">Drag & drop or click to upload</p>
+                        </div>
+                      </div>
+                    </ObjectUploader>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
