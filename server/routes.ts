@@ -569,6 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         capacity: z.number().optional(),
         visibilityEnum: z.string().optional(),
         allowedDomains: z.array(z.string()).optional(),
+        imageUrl: z.string().nullable().optional(),
       }).transform((data) => ({
         ...data,
         tagsJson: data.tags,
