@@ -555,7 +555,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Parse and validate the update data (excluding creatorUserId and companyId)
-      const updateData = insertEventSchema.omit({ creatorUserId: true, companyId: true }).parse(req.body);
+      // Create a schema for updates that excludes non-updatable fields
+      const updateEventSchema = z.object({
+        title: z.string().min(1, "Title is required"),
+        description: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        locationText: z.string().optional(),
+        campus: z.string().optional(),
+        isVirtual: z.boolean().optional(),
+        startAt: z.string().transform((val) => new Date(val)),
+        endAt: z.string().transform((val) => new Date(val)),
+        capacity: z.number().optional(),
+        visibilityEnum: z.string().optional(),
+        allowedDomains: z.array(z.string()).optional(),
+      }).transform((data) => ({
+        ...data,
+        tagsJson: data.tags,
+        allowedDomainsJson: data.allowedDomains,
+        tags: undefined,
+        allowedDomains: undefined,
+      }));
+      
+      const updateData = updateEventSchema.parse(req.body);
       
       const updatedEvent = await storage.updateEvent(eventId, updateData);
       
