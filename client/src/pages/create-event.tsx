@@ -232,16 +232,21 @@ export default function CreateEvent() {
                           console.log("Upload successful, imageUrl:", imageUrl); // Debug log
                           if (imageUrl) {
                             // Set ACL policy for the uploaded image
+                            console.log("Calling /api/event-images with imageURL:", imageUrl); // Debug log
                             fetch("/api/event-images", {
                               method: "PUT",
                               headers: { "Content-Type": "application/json" },
                               credentials: "include",
                               body: JSON.stringify({ imageURL: imageUrl }),
                             })
-                            .then(res => res.json())
+                            .then(res => {
+                              console.log("ACL response status:", res.status); // Debug log
+                              return res.json();
+                            })
                             .then(data => {
-                              console.log("ACL response:", data); // Debug log
+                              console.log("ACL response data:", data); // Debug log
                               setEventImageUrl(data.objectPath);
+                              console.log("Set eventImageUrl to:", data.objectPath); // Debug log
                               toast({
                                 title: "Image uploaded!",
                                 description: "Your cover image looks great.",
