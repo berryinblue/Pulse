@@ -180,10 +180,14 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
             
             {!isEventCreator && (
               event.userRsvpStatus === "yes" ? (
-                <Badge variant="default" className="text-sm px-3 py-1">
+                <Button
+                  disabled
+                  variant="default"
+                  data-testid={`button-going-${event.id}`}
+                >
                   <i className="fas fa-check mr-2"></i>
                   Going
-                </Badge>
+                </Button>
               ) : (
                 <Button
                   onClick={handleRsvp}
@@ -274,10 +278,16 @@ export default function EventCard({ event, featured = false }: EventCardProps) {
           
           {!isEventCreator && (
             event.userRsvpStatus === "yes" ? (
-              <Badge variant="default" className="text-xs px-2 py-1">
+              <Button
+                size="sm"
+                disabled
+                variant="default"
+                className="text-sm px-3 py-1"
+                data-testid={`button-going-${event.id}`}
+              >
                 <i className="fas fa-check mr-1"></i>
                 Going
-              </Badge>
+              </Button>
             ) : (
               <Button
                 size="sm"
