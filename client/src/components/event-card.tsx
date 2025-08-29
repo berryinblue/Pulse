@@ -146,7 +146,6 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
               <div className="flex items-center space-x-2 mb-2">
                 <Badge variant="default">Featured</Badge>
                 {isEventCreator && <Badge variant="outline">Host</Badge>}
-                {!isEventCreator && event.userRsvpStatus === "yes" && <Badge variant="outline">Going</Badge>}
                 {tags.map((tag) => (
                   <Badge key={tag} variant="secondary">{tag}</Badge>
                 ))}
@@ -248,7 +247,6 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
       <CardContent className="p-4">
         <div className="flex items-center space-x-2 mb-2">
           {isEventCreator && <Badge variant="outline" className="text-xs">Host</Badge>}
-          {!isEventCreator && event.userRsvpStatus === "yes" && <Badge variant="outline" className="text-xs">Going</Badge>}
           {tags.map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">
               {tag}
