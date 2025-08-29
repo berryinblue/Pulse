@@ -19,6 +19,7 @@ interface EventCardProps {
     startAt: string;
     endAt: string;
     capacity: number | null;
+    imageUrl: string | null;
     creatorUserId: string;
     creator: {
       displayName: string;
@@ -152,8 +153,17 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
     return (
       <Link href={`/events/${event.id}`} className="block">
         <Card className={`${featured ? 'md:col-span-2 xl:col-span-3' : ''} overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer`}>
-          {/* Featured events would have an image, but we don't generate binary files */}
-        <div className="h-48 bg-gradient-to-r from-primary/20 to-accent/20"></div>
+          {event.imageUrl ? (
+            <div className="h-48 w-full">
+              <img 
+                src={event.imageUrl} 
+                alt={event.title}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="h-48 bg-gradient-to-r from-primary/20 to-accent/20"></div>
+          )}
         <CardContent className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -264,8 +274,17 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
   return (
     <Link href={`/events/${event.id}`} className="block">
       <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-      {/* Regular events would have images, but we don't generate binary files */}
-      <div className="h-32 bg-gradient-to-r from-primary/20 to-accent/20"></div>
+      {event.imageUrl ? (
+        <div className="h-32 w-full">
+          <img 
+            src={event.imageUrl} 
+            alt={event.title}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      ) : (
+        <div className="h-32 bg-gradient-to-r from-primary/20 to-accent/20"></div>
+      )}
       <CardContent className="p-4">
         <div className="flex items-center space-x-2 mb-2">
           {isEventCreator && <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs">Hosting</Badge>}

@@ -225,6 +225,16 @@ export default function EventDetail() {
             </div>
           </CardHeader>
           
+          {event.imageUrl && (
+            <div className="px-6">
+              <img 
+                src={event.imageUrl} 
+                alt={event.title}
+                className="w-full h-64 object-cover rounded-lg"
+              />
+            </div>
+          )}
+          
           <CardContent className="space-y-6">
             {event.description && (
               <div>

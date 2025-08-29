@@ -34,6 +34,7 @@ export const events = pgTable("events", {
   startAt: timestamp("start_at").notNull(),
   endAt: timestamp("end_at").notNull(),
   capacity: integer("capacity"),
+  imageUrl: text("image_url"), // Event image URL
   visibilityEnum: text("visibility_enum").notNull().default("company_only"), // 'company_only', 'cross_company'
   allowedDomainsJson: jsonb("allowed_domains_json").$type<string[]>(),
   createdAt: timestamp("created_at").defaultNow(),

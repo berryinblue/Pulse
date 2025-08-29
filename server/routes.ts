@@ -7,6 +7,7 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { emailService } from "./email-service";
 import { insertEventSchema, insertReportSchema } from "@shared/schema";
+import { ObjectStorageService } from "./objectStorage";
 import ics from "ics";
 import crypto from "crypto";
 
@@ -720,6 +721,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Email change error:", error);
       res.status(500).json({ message: "Failed to initiate email change" });
+    }
+  });
+
+  // Object storage routes
+  app.post("/api/objects/upload", requireAuth, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Failed to get upload URL:", error);
+      res.status(500).json({ message: "Failed to get upload URL" });
+    }
+  });
+
+  app.get("/objects/:objectPath(*)", async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error accessing object:", error);
+      if (error?.name === "ObjectNotFoundError") {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  app.put("/api/event-images", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { imageURL } = req.body;
+
+      if (!imageURL) {
+        return res.status(400).json({ error: "imageURL is required" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        imageURL,
+        {
+          owner: user.id,
+          visibility: "public", // Event images are public
+        }
+      );
+
+      res.status(200).json({ objectPath });
+    } catch (error) {
+      console.error("Error setting event image:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 

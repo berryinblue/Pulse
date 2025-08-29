@@ -18,6 +18,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 const availableTags = ["Social", "Career", "Fitness", "Learning", "Food"];
 
@@ -50,6 +52,7 @@ export default function EditEvent() {
   const queryClient = useQueryClient();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
+  const [eventImageUrl, setEventImageUrl] = useState<string | null>(null);
 
   const eventId = params?.id;
 

@@ -16,6 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 const availableTags = ["Social", "Career", "Fitness", "Learning", "Food"];
 
@@ -47,6 +49,7 @@ export default function CreateEvent() {
   const queryClient = useQueryClient();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
+  const [eventImageUrl, setEventImageUrl] = useState<string | null>(null);
 
   const goBack = () => {
     window.history.back();
@@ -76,6 +79,7 @@ export default function CreateEvent() {
         ...data,
         tags: selectedTags,
         capacity: data.capacity || undefined,
+        imageUrl: eventImageUrl,
       };
       const response = await apiRequest("POST", "/api/events", eventData);
       return response.json();
@@ -181,6 +185,84 @@ export default function CreateEvent() {
                     </FormItem>
                   )}
                 />
+
+                {/* Event Image Upload */}
+                <div className="space-y-3">
+                  <Label>Event Image</Label>
+                  {eventImageUrl ? (
+                    <div className="relative">
+                      <img 
+                        src={eventImageUrl} 
+                        alt="Event preview" 
+                        className="w-full h-48 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => setEventImageUrl(null)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <ObjectUploader
+                      maxNumberOfFiles={1}
+                      maxFileSize={5242880} // 5MB limit for event images
+                      onGetUploadParameters={async () => {
+                        const response = await fetch("/api/objects/upload", {
+                          method: "POST",
+                          credentials: "include",
+                        });
+                        const data = await response.json();
+                        return {
+                          method: "PUT" as const,
+                          url: data.uploadURL,
+                        };
+                      }}
+                      onComplete={(result) => {
+                        if (result.successful.length > 0) {
+                          const uploadedFile = result.successful[0];
+                          const imageUrl = uploadedFile.uploadURL;
+                          if (imageUrl) {
+                            // Set ACL policy for the uploaded image
+                            fetch("/api/event-images", {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              credentials: "include",
+                              body: JSON.stringify({ imageURL: imageUrl }),
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                              setEventImageUrl(data.objectPath);
+                              toast({
+                                title: "Image uploaded successfully!",
+                                description: "Your event image has been uploaded.",
+                              });
+                            })
+                            .catch(() => {
+                              toast({
+                                title: "Error",
+                                description: "Failed to process uploaded image.",
+                                variant: "destructive",
+                              });
+                            });
+                          }
+                        }
+                      }}
+                      buttonClassName="w-full"
+                    >
+                      <div className="flex items-center justify-center gap-2 py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        <i className="fas fa-image text-gray-400"></i>
+                        <span className="text-gray-600">Upload Event Image</span>
+                      </div>
+                    </ObjectUploader>
+                  )}
+                  <p className="text-sm text-gray-500">
+                    Add an image to make your event more appealing. Max size: 5MB.
+                  </p>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
