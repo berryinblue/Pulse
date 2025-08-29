@@ -188,23 +188,26 @@ export default function CreateEvent() {
 
                 {/* Event Image Upload */}
                 <div className="space-y-3">
-                  <Label>Event Image</Label>
+                  <Label className="text-base font-medium">Event Cover Image</Label>
                   {eventImageUrl ? (
-                    <div className="relative">
+                    <div className="relative group">
                       <img 
                         src={eventImageUrl} 
-                        alt="Event preview" 
-                        className="w-full h-48 object-cover rounded-lg border"
+                        alt="Event cover" 
+                        className="w-full h-48 object-cover rounded-lg border shadow-sm"
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={() => setEventImageUrl(null)}
-                      >
-                        Remove
-                      </Button>
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setEventImageUrl(null)}
+                          className="bg-white text-black hover:bg-gray-100"
+                        >
+                          <i className="fas fa-trash mr-2"></i>
+                          Remove Image
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <ObjectUploader
@@ -237,31 +240,33 @@ export default function CreateEvent() {
                             .then(data => {
                               setEventImageUrl(data.objectPath);
                               toast({
-                                title: "Image uploaded successfully!",
-                                description: "Your event image has been uploaded.",
+                                title: "Image uploaded!",
+                                description: "Your cover image looks great.",
                               });
                             })
                             .catch(() => {
                               toast({
-                                title: "Error",
-                                description: "Failed to process uploaded image.",
+                                title: "Upload failed",
+                                description: "Please try again.",
                                 variant: "destructive",
                               });
                             });
                           }
                         }
                       }}
-                      buttonClassName="w-full"
+                      buttonClassName="w-full h-48 border-2 border-dashed border-gray-300 hover:border-primary/50 hover:bg-gray-50 transition-colors rounded-lg"
                     >
-                      <div className="flex items-center justify-center gap-2 py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                        <i className="fas fa-image text-gray-400"></i>
-                        <span className="text-gray-600">Upload Event Image</span>
+                      <div className="flex flex-col items-center justify-center gap-3 h-full">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <i className="fas fa-image text-xl text-primary"></i>
+                        </div>
+                        <div className="text-center">
+                          <p className="font-medium text-gray-900">Add a cover image</p>
+                          <p className="text-sm text-gray-500 mt-1">Drag & drop or click to upload</p>
+                        </div>
                       </div>
                     </ObjectUploader>
                   )}
-                  <p className="text-sm text-gray-500">
-                    Add an image to make your event more appealing. Max size: 5MB.
-                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

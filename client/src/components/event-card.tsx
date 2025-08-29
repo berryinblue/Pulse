@@ -154,11 +154,11 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
       <Link href={`/events/${event.id}`} className="block">
         <Card className={`${featured ? 'md:col-span-2 xl:col-span-3' : ''} overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer`}>
           {event.imageUrl ? (
-            <div className="h-48 w-full">
+            <div className="h-48 w-full overflow-hidden">
               <img 
                 src={event.imageUrl} 
                 alt={event.title}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover transition-transform hover:scale-105"
               />
             </div>
           ) : (
@@ -275,11 +275,11 @@ export default function EventCard({ event: initialEvent, featured = false }: Eve
     <Link href={`/events/${event.id}`} className="block">
       <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
       {event.imageUrl ? (
-        <div className="h-32 w-full">
+        <div className="h-32 w-full overflow-hidden">
           <img 
             src={event.imageUrl} 
             alt={event.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform hover:scale-105"
           />
         </div>
       ) : (
