@@ -270,6 +270,7 @@ export class DatabaseStorage implements IStorage {
 
   async createEvent(event: InsertEvent): Promise<Event> {
     const { tags, allowedDomains, ...eventData } = event;
+    console.log('Creating event with data:', { ...eventData, tags, allowedDomains }); // Debug log
     const result = await db.insert(events).values({
       ...eventData,
       tagsJson: tags || [],
